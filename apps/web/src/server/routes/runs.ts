@@ -17,7 +17,10 @@ import {
   appendRunEvent,
   transitionRun,
 } from "@ragtime/db";
-import { getRenderClient } from "../lib/render-client.js";
+import {
+  classifyWorkflowStartError,
+  getRenderClient,
+} from "../lib/render-client.js";
 import { getOwnedRun } from "../lib/ownership.js";
 import { asSessionRequest } from "../types.js";
 import { createRunPlan, getRunPlanRejection } from "./run-plan.js";
@@ -124,12 +127,16 @@ export function registerRunRoutes(app: FastifyInstance): void {
       const render = getRenderClient();
       await render.workflows.startTask(`${config.workflowSlug}/run_bakeoff`, [run.id]);
     } catch (err) {
-      const publicError = safePersistedError(
-        err,
-        "Failed to start workflow"
-      );
+      const failure = classifyWorkflowStartError(err, config.workflowSlug);
+      const publicError = safePersistedError(err, failure.message);
       app.log.error(
-        { runId: run.id, errorName: err instanceof Error ? err.name : "Unknown" },
+        {
+          runId: run.id,
+          errorName: err instanceof Error ? err.name : "Unknown",
+          code: failure.code,
+          statusCode: failure.statusCode,
+          detail: failure.detail,
+        },
         "Workflow start failed"
       );
       const failed = await transitionRun(db, run.id, "draft", "failed", {
@@ -142,7 +149,7 @@ export function registerRunRoutes(app: FastifyInstance): void {
           error: publicError,
         });
       }
-      return reply.status(502).send({ error: publicError });
+      return reply.status(502).send({ error: publicError, code: failure.code });
     }
 
     return { data: { runId: run.id } };

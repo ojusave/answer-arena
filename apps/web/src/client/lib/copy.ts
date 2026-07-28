@@ -98,6 +98,12 @@ export function friendlyError(raw: string, meta?: FriendlyErrorMeta): string {
       return "One of the selected models is not available on the model gateway.";
     case "provider_unavailable":
       return "The model gateway is temporarily unavailable. Try again shortly.";
+    case "workflow_auth":
+      return "Run did not start: Render rejected the workflow trigger. RENDER_API_KEY on this deployment is invalid or expired.";
+    case "workflow_not_found":
+      return "Run did not start: Render found no matching workflow task. Check WORKFLOW_SLUG and that the workflow has deployed.";
+    case "workflow_unavailable":
+      return "Run did not start: Render could not be reached. Try again shortly.";
     default:
       break;
   }
