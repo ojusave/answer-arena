@@ -1,5 +1,6 @@
 import {
   ProviderCallError,
+  type CatalogWarning,
   type GatewayIdentity,
   type ModelGateway,
   type ModelInfo,
@@ -384,10 +385,19 @@ export function createOpenRouterGateway(options?: {
         architecture?: { output_modalities?: string[] };
       };
 
+      const warnings: CatalogWarning[] = [];
+
       // GET /models defaults to output_modalities=text, which excludes embeddings and rerank.
       const [allModels, embeddingOnly] = await Promise.all([
         request<{ data?: ModelRow[] }>("/models?output_modalities=all"),
-        request<{ data?: ModelRow[] }>("/embeddings/models").catch(() => ({ data: [] as ModelRow[] })),
+        // A failure here must not masquerade as "this gateway has no embedding models".
+        request<{ data?: ModelRow[] }>("/embeddings/models").catch((err: unknown) => {
+          warnings.push({
+            source: "/embeddings/models",
+            message: err instanceof Error ? err.message : String(err),
+          });
+          return { data: [] as ModelRow[] };
+        }),
       ]);
 
       const byId = new Map<string, ModelRow>();
@@ -420,7 +430,7 @@ export function createOpenRouterGateway(options?: {
       rerank.sort((a, b) => a.name.localeCompare(b.name));
       chat.sort((a, b) => a.name.localeCompare(b.name));
 
-      return { embedding, rerank, chat, gateway: GATEWAY_IDENTITY };
+      return { embedding, rerank, chat, gateway: GATEWAY_IDENTITY, warnings };
     },
   };
 }

@@ -1,4 +1,8 @@
-/** Serializable port contracts. Adapters live in separate packages. */
+/**
+ * Serializable port contracts. Vendor adapters (gateway, vector store) live in
+ * separate packages; core also ships default adapters for extraction and
+ * chunking, which callers can replace by passing their own implementation.
+ */
 
 export type Receipt = {
   latencyMs: number;
@@ -31,11 +35,18 @@ export type GatewayIdentity = {
   creditsUrl?: string;
 };
 
+/** A catalog source that failed, so an empty list is not read as "none exist". */
+export type CatalogWarning = {
+  source: string;
+  message: string;
+};
+
 export type ModelCatalog = {
   embedding: ModelInfo[];
   rerank: ModelInfo[];
   chat: ModelInfo[];
   gateway: GatewayIdentity;
+  warnings: CatalogWarning[];
 };
 
 export interface ModelGateway {
