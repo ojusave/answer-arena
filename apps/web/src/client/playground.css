@@ -46,7 +46,6 @@
 .pg-shell .mantine-AppShell-main {
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
 .pg-header {
@@ -126,8 +125,10 @@
 }
 
 .workspace-page {
-  height: calc(100vh - var(--rag-header-h) - var(--rag-footer-h) - 16px);
-  min-height: 420px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .pg-zone-label {
@@ -798,7 +799,8 @@
 
 @media (max-width: 70em) {
   .workspace-page {
-    height: calc(100vh - var(--rag-header-h) - var(--rag-footer-h) - 16px);
+    flex: 1;
+    min-height: 0;
   }
 
   .mobile-panes {
