@@ -7,17 +7,21 @@ import { chunks, chunkEmbeddings } from "./schema.js";
 export function createPgVectorStore(db: Db): VectorStore {
   return {
     async deleteAndInsertChunks(documentId, corpusId, chunkRecords) {
-      await db.delete(chunks).where(eq(chunks.documentId, documentId));
-      if (chunkRecords.length === 0) return;
-      await db.insert(chunks).values(
-        chunkRecords.map((c) => ({
-          documentId,
-          corpusId,
-          idx: c.idx,
-          content: c.content,
-          tokenEstimate: c.tokenEstimate,
-        }))
-      );
+      // One transaction: a crash between the delete and the insert would
+      // otherwise leave the document with no chunks at all.
+      await db.transaction(async (tx) => {
+        await tx.delete(chunks).where(eq(chunks.documentId, documentId));
+        if (chunkRecords.length === 0) return;
+        await tx.insert(chunks).values(
+          chunkRecords.map((c) => ({
+            documentId,
+            corpusId,
+            idx: c.idx,
+            content: c.content,
+            tokenEstimate: c.tokenEstimate,
+          }))
+        );
+      });
     },
 
     async getMissingChunkIds(corpusId, embeddingModel) {
