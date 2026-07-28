@@ -49,8 +49,11 @@ export default function TrialStagesPanel({
         mb={4}
         style={{
           borderRadius: 4,
-          background: highlighted ? "var(--mantine-color-blue-0)" : "var(--mantine-color-gray-0)",
-          border: highlighted ? "1px solid var(--mantine-color-blue-4)" : "1px solid transparent",
+          // Raw palette shades do not flip with the color scheme: these tokens do.
+          background: highlighted ? "var(--pg-accent-soft)" : "var(--rag-subtle)",
+          border: highlighted
+            ? "1px solid var(--pg-accent-border)"
+            : "1px solid transparent",
         }}
         onMouseEnter={() => onChunkHover?.(id)}
         onMouseLeave={() => onChunkHover?.(null)}
