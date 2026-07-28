@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import {
   embedQuery,
   retrieveCandidates,
@@ -8,8 +9,11 @@ import {
   topKByScore,
   generateAnswer,
   judgeAnswer,
+  safePersistedError,
 } from "@ragtime/core";
+import { getDb, schema } from "@ragtime/db";
 import { wirePorts } from "./wiring.js";
+import { asSessionRequest } from "./types.js";
 
 export const inspectConfigSchema = z.object({
   corpusId: z.string().uuid(),
@@ -23,24 +27,71 @@ export const inspectConfigSchema = z.object({
   judgeModel: z.string().optional(),
 });
 
+/** A stream is opened immediately after the POST, so the handle is short-lived. */
+const INSPECT_TTL_MS = 60_000;
+
 type InspectSession = {
   config: z.infer<typeof inspectConfigSchema>;
+  /** The stream runs paid provider calls, so only its creator may consume it. */
+  ownerSessionId: string;
+  expiresAt: number;
 };
 
+/** Thrown to unwind the pipeline when the client disconnects mid-stream. */
+class InspectAborted extends Error {
+  override readonly name = "InspectAborted";
+}
+
 const sessions = new Map<string, InspectSession>();
+
+/** Drop handles whose stream was never opened; otherwise the map grows forever. */
+function evictExpired(now: number): void {
+  for (const [id, session] of sessions) {
+    if (session.expiresAt <= now) sessions.delete(id);
+  }
+}
 
 export function registerInspectRoutes(app: FastifyInstance) {
   app.post("/api/inspect", async (req, reply) => {
     const parsed = inspectConfigSchema.safeParse(req.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
+
+    // Reject unknown corpora here rather than after paying for an embedding.
+    const db = getDb();
+    const corpus = await db.query.corpora.findFirst({
+      where: eq(schema.corpora.id, parsed.data.corpusId),
+      columns: { id: true },
+    });
+    if (!corpus) return reply.status(404).send({ error: "Corpus not found" });
+
+    const now = Date.now();
+    evictExpired(now);
     const inspectId = randomUUID();
-    sessions.set(inspectId, { config: parsed.data });
+    sessions.set(inspectId, {
+      config: parsed.data,
+      ownerSessionId: asSessionRequest(req).sessionId,
+      expiresAt: now + INSPECT_TTL_MS,
+    });
     return { data: { inspectId } };
   });
 
   app.get<{ Params: { id: string } }>("/api/inspect/:id/stream", async (req, reply) => {
+    const now = Date.now();
+    evictExpired(now);
     const session = sessions.get(req.params.id);
-    if (!session) return reply.status(404).send({ error: "Not found" });
+    // Same 404 for missing and unowned: knowing an id exists is itself a leak.
+    if (!session || session.ownerSessionId !== asSessionRequest(req).sessionId) {
+      return reply.status(404).send({ error: "Not found" });
+    }
+    // Claim it now so a replay of the same id cannot start a second pipeline.
+    sessions.delete(req.params.id);
+
+    const abort = new AbortController();
+    reply.raw.on("close", () => abort.abort());
+    /** Stop before starting another paid stage once the client has gone. */
+    const ensureLive = () => {
+      if (abort.signal.aborted) throw new InspectAborted("client disconnected");
+    };
 
     reply.raw.writeHead(200, {
       "Content-Type": "text/event-stream",
@@ -59,6 +110,7 @@ export function registerInspectRoutes(app: FastifyInstance) {
     let totalLatency = 0;
 
     try {
+      ensureLive();
       const embed = await embedQuery({
         gateway: ports.gateway,
         vectorStore: ports.vectorStore,
@@ -101,6 +153,7 @@ export function registerInspectRoutes(app: FastifyInstance) {
 
       let keptIds = topKByScore(retrieval.chunkIds, retrieval.scores, cfg.finalK);
       if (cfg.rerankModel) {
+        ensureLive();
         const chunkMap = await ports.vectorStore.getChunksByIds(retrieval.chunkIds);
         const docs = retrieval.chunkIds.map((id) => chunkMap.get(id)?.content ?? "");
         const { stage, keptChunkIds } = await rerankCandidates({
@@ -122,6 +175,7 @@ export function registerInspectRoutes(app: FastifyInstance) {
         send("stage", { stage: "rerank", data: { skipped: true }, receipt: { latencyMs: 0, costUsd: 0 } });
       }
 
+      ensureLive();
       const chunkMap = await ports.vectorStore.getChunksByIds(keptIds);
       const gen = await generateAnswer({
         gateway: ports.gateway,
@@ -138,6 +192,7 @@ export function registerInspectRoutes(app: FastifyInstance) {
 
       const judgeModel = cfg.judgeModel ?? process.env.JUDGE_MODEL;
       if (judgeModel) {
+        ensureLive();
         const context = keptIds.map((id) => chunkMap.get(id)?.content ?? "").join("\n\n");
         const judge = await judgeAnswer({
           scorer: ports.scorer,
@@ -163,9 +218,17 @@ export function registerInspectRoutes(app: FastifyInstance) {
 
       send("done", { totalCostUsd: totalCost, totalLatencyMs: totalLatency });
     } catch (err) {
-      send("pipeline_error", { message: err instanceof Error ? err.message : String(err) });
+      if (err instanceof InspectAborted) {
+        app.log.info({ inspectId: req.params.id }, "Inspect stream aborted by client");
+      } else {
+        app.log.error(
+          { inspectId: req.params.id, err },
+          "Inspect pipeline failed"
+        );
+        // Upstream messages can carry internal detail: send a safe summary.
+        send("pipeline_error", { message: safePersistedError(err, "Pipeline failed") });
+      }
     } finally {
-      sessions.delete(req.params.id);
       reply.raw.end();
     }
   });
