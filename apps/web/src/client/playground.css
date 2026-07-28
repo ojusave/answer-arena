@@ -115,13 +115,26 @@
 }
 
 .pg-main {
-  flex: 1;
+  /*
+   * The AppShell header and footer are position: fixed, so this element has to
+   * reserve their space itself. A flat padding here silently replaced Mantine's
+   * offsets and left content sitting underneath both bars.
+   *
+   * Pinning the height to the viewport is also what makes the panes scroll:
+   * without a definite height nothing below can resolve one, so `.pane-scroll`
+   * grows to fit its content and the whole document scrolls instead.
+   */
+  height: 100dvh;
   width: calc(100% - 32px);
   max-width: none;
   min-height: 0;
   margin: 0 auto;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: calc(var(--app-shell-header-offset, 0rem) + 8px);
+  padding-bottom: calc(var(--app-shell-footer-offset, 0rem) + 8px);
+  /* The workspace fills this exactly and scrolls internally, so this only
+     engages for the short centered states (setup, loading, 404) on a viewport
+     too small to hold them, where the alternative is unreachable content. */
+  overflow-y: auto;
 }
 
 .workspace-page {
