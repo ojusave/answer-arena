@@ -109,7 +109,7 @@ export function createOpenRouterGateway(options?: {
   const apiKey = options?.apiKey ?? process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is required");
   const appUrl = options?.appUrl ?? process.env.APP_URL ?? "http://localhost:5173";
-  const appTitle = options?.appTitle ?? process.env.OPENROUTER_APP_TITLE ?? "RAGtime";
+  const appTitle = options?.appTitle ?? process.env.OPENROUTER_APP_TITLE ?? "Answer Arena";
 
   const headers = (): Record<string, string> => ({
     Authorization: `Bearer ${apiKey}`,

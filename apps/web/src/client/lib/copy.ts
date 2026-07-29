@@ -136,11 +136,11 @@ export function friendlyError(raw: string, meta?: FriendlyErrorMeta): string {
 
 export const COPY = {
   app: {
-    subtitle: "RAG pipeline comparison",
+    subtitle: "Playground to compare search + answer setups side by side",
     zones: { inputs: "Configure", run: "Compare", detail: "Inspect" },
-    welcomeTitle: "Compare retrieval pipelines against the same evidence.",
+    welcomeTitle: "Try different search + answer setups on the same question.",
     welcomeBody:
-      "Load the sample corpus, choose the models in each setup, then compare their answers, evidence, cost, and latency.",
+      "Load the sample docs, pick the models in each setup, then compare answers, evidence, cost, and speed side by side.",
     questionSection: "Question",
     modelsSection: "Setups",
     sampleQuestions: "Sample questions",

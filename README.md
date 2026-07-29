@@ -1,10 +1,10 @@
-# RAGtime
+# Answer Arena
 
-Compare embedding, rerank, and generation models on the same corpus and question. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task, gets scored by a shared judge model, and lands on a cost / latency / quality leaderboard.
+Playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
 
-[Deploy to Render](https://render.com/deploy?repo=https://github.com/ojusave/ragtime) · [Live demo](https://ragtime-web.onrender.com/) · [Workflows docs](https://render.com/docs/workflows)
+[Deploy to Render](https://render.com/deploy?repo=https://github.com/ojusave/answer-arena) · [Live demo](https://answer-arena-web.onrender.com/) · [Workflows docs](https://render.com/docs/workflows)
 
-![RAGtime comparing two RAG setups on the same question](static/images/compare.png)
+![Answer Arena comparing two setups on the same question](static/images/compare.png)
 
 ## Highlights
 
@@ -19,13 +19,13 @@ Compare embedding, rerank, and generation models on the same corpus and question
 
 ## Overview
 
-RAGtime is a bake-off template for RAG pipelines. You load a corpus (the demo seeds 100 SciFact medical abstracts automatically), compose one or more setups (embedding + optional rerank + generation), and run them against the same question. The web service starts a `run_bakeoff` workflow; each trial claims a lease, walks retrieve → optional rerank → generate → judge, and streams stage events into a live execution timeline in **Compare**.
+Answer Arena is a hosted bake-off for retrieval-augmented answer setups (often called RAG). You load a corpus (the demo seeds 100 SciFact medical abstracts automatically), compose one or more setups (embedding + optional rerank + generation), and run them against the same question. The web service starts a `run_bakeoff` workflow; each trial claims a lease, walks retrieve → optional rerank → generate → judge, and streams stage events into a live execution timeline in **Compare**.
 
 The interesting part is not the leaderboard itself. It is seeing *why* two setups diverge: which passages each one retrieved, what the judge scored, how long each stage took side by side, and how much each stage cost.
 
 ## Usage
 
-1. Open the [live demo](https://ragtime-web.onrender.com/) or your own deploy. The SciFact demo library seeds itself on first load.
+1. Open the [live demo](https://answer-arena-web.onrender.com/) or your own deploy. The SciFact demo library seeds itself on first load.
 2. Pick a sample question (or write your own) and compose setups in **Configure**.
 3. Click **Run**. Answers appear side by side in **Compare**; the live execution timeline shows stage duration, concurrency, retries, and failures for each setup.
 4. Select an answer to open **Inspect**: retrieved passages, stage receipts, and judge dimensions.
@@ -38,12 +38,12 @@ The interesting part is not the leaderboard itself. It is seeing *why* two setup
 
 ### 1. Blueprint (web + Postgres)
 
-Use the [Deploy to Render](https://render.com/deploy?repo=https://github.com/ojusave/ragtime) button, or create a Blueprint from [`render.yaml`](render.yaml). That provisions:
+Use the [Deploy to Render](https://render.com/deploy?repo=https://github.com/ojusave/answer-arena) button, or create a Blueprint from [`render.yaml`](render.yaml). That provisions:
 
 | Resource | Name | Role |
 |----------|------|------|
-| Web Service | `ragtime-web` | SPA + API, health check at `/healthz`, `preDeployCommand: pnpm db:migrate` |
-| Postgres 16 | `ragtime-db` | Chunks, pgvector embeddings, runs, trials, events |
+| Web Service | `answer-arena-web` | SPA + API, health check at `/healthz`, `preDeployCommand: pnpm db:migrate` |
+| Postgres 16 | `answer-arena-db` | Chunks, pgvector embeddings, runs, trials, events |
 
 ### 2. Workflow service (manual)
 
@@ -54,7 +54,7 @@ Blueprints do not create Workflow services yet. In the Dashboard:
 3. **Build**: `pnpm install && pnpm build:workflows`
 4. **Start**: `node apps/workflows/dist/index.js`
 5. Same **region** as the web service and database (private networking)
-6. Note the **Workflow Slug** and set `WORKFLOW_SLUG` on the web service to match (Blueprint default: `ragtime-workflows`)
+6. Note the **Workflow Slug** and set `WORKFLOW_SLUG` on the web service to match (Blueprint default: `answer-arena-workflows`)
 
 ### 3. Secrets
 
@@ -64,7 +64,7 @@ Blueprints do not create Workflow services yet. In the Dashboard:
 | `RENDER_API_KEY` | Web | Start and cancel workflow tasks |
 | `JUDGE_MODEL` | Web + Workflow | Default judge chat slug; runs are rejected without a judge |
 | `WORKFLOW_SLUG` | Web | Must match the Dashboard workflow slug |
-| `DATABASE_URL` | Workflow | Internal URL from `ragtime-db` (Blueprint wires this on the web service) |
+| `DATABASE_URL` | Workflow | Internal URL from `answer-arena-db` (Blueprint wires this on the web service) |
 | `APP_URL` | Workflow | Public web URL for OpenRouter `HTTP-Referer` (Blueprint sets this on the web service from `RENDER_EXTERNAL_URL`) |
 
 ### 4. Open the app
@@ -81,10 +81,10 @@ A suggested-matrix smoke with budget-tier models usually lands in low single-dig
 | `OPENROUTER_API_KEY` | (required for real models) | Bearer token |
 | `RENDER_API_KEY` | (required on web) | Workflow triggers |
 | `APP_URL` | from `RENDER_EXTERNAL_URL` on web | OpenRouter attribution |
-| `OPENROUTER_APP_TITLE` | `RAGtime` | `X-OpenRouter-Title` |
+| `OPENROUTER_APP_TITLE` | `Answer Arena` | `X-OpenRouter-Title` |
 | `MODEL_GATEWAY` | `openrouter` | Registered gateway id; only `openrouter` ships today |
 | `WORKFLOW_DISPATCHER` | `render` | Composition root for task triggers |
-| `WORKFLOW_SLUG` | `ragtime-workflows` | `{slug}/{task_name}` prefix |
+| `WORKFLOW_SLUG` | `answer-arena-workflows` | `{slug}/{task_name}` prefix |
 | `JUDGE_MODEL` | (required) | Fallback judge if the run config omits one |
 | `MAX_RUN_BUDGET_USD` | `5` | Hard per-run ceiling |
 | `MAX_PROVIDER_CALL_USD` | `0.5` | Max reserved for one provider call |
@@ -104,7 +104,7 @@ Runs are scoped to an anonymous session cookie, so testers only see and cancel t
 
 Reloading the page reattaches to the session's active run via `GET /api/runs/active`, so a run stays watchable and cancelable rather than silently holding a slot. Runs that nothing will finish (a row whose workflow task was never dispatched, or a run whose workflow disappeared) are failed on the next admission check so their slot returns to the pool.
 
-Worst-case concurrent spend is `MAX_ACTIVE_RUNS_TOTAL × MAX_RUN_BUDGET_USD`, which is $25 with the Blueprint defaults. Raising `MAX_ACTIVE_RUNS_TOTAL` also multiplies Postgres connections (`DB_POOL_MAX` per process) and provider rate-limit pressure, so move it alongside your database plan rather than on its own.
+Worst-case concurrent spend is `MAX_ACTIVE_RUNS_TOTAL × MAX_RUN_BUDGET_USD`, which is $25 with the Blueprint defaults. Raising `MAX_ACTIVE_RUNS_TOTAL` also multiplies Postgres connections (`DB_POOL_MAX` per process) and provider quota pressure, so move it alongside your database plan rather than on its own.
 
 ## How a run works
 
@@ -135,7 +135,7 @@ Ports live in `packages/core`. Implementations are chosen in `packages/compositi
 ## Project structure
 
 ```
-ragtime/
+answer-arena/
   apps/web/              Fastify API + Vite React SPA
   apps/workflows/        Render Workflow tasks (ingest, embed, trial, bake-off)
   packages/core/         Ports, pipeline stages, prompts, schemas
@@ -145,6 +145,8 @@ ragtime/
   render.yaml            Blueprint (web + Postgres)
   static/images/         README screenshots from the live deploy
 ```
+
+Internal npm packages still use the `@ragtime/*` scope for now; that is an implementation detail and does not affect the product name.
 
 ## Troubleshooting
 
@@ -169,4 +171,4 @@ Builds workspace packages, then runs core / db / gateway / web unit tests (inclu
 
 ## Contributing
 
-Issues and PRs are welcome on [github.com/ojusave/ragtime](https://github.com/ojusave/ragtime). Keep changes small and focused; match existing module boundaries (`packages/composition` for wiring, `packages/core` for pipeline logic, `apps/workflows` for durable tasks).
+Issues and PRs are welcome on [github.com/ojusave/answer-arena](https://github.com/ojusave/answer-arena). Keep changes small and focused; match existing module boundaries (`packages/composition` for wiring, `packages/core` for pipeline logic, `apps/workflows` for durable tasks).

@@ -24,7 +24,7 @@ export default function App() {
           <Anchor component={Link} to="/" className="pg-brand">
             <img src="/favicon.svg" alt="" width="24" height="24" className="pg-brand-mark" />
             <Box className="pg-brand-copy">
-              <Text className="pg-brand-name">RAGtime</Text>
+              <Text className="pg-brand-name">Answer Arena</Text>
             </Box>
             <span className="pg-brand-rule" aria-hidden="true" />
             <Text className="pg-brand-subtitle">{COPY.app.subtitle}</Text>
