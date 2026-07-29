@@ -9,7 +9,7 @@ import {
   WorkflowDispatchError,
   RunAdmissionError,
   checkRunAdmission,
-  DRAFT_ADMISSION_GRACE_SECONDS,
+  STRANDED_DRAFT_SECONDS,
 } from "@ragtime/core";
 import { createWorkflowDispatcher } from "@ragtime/composition";
 import {
@@ -23,6 +23,7 @@ import {
   transitionRun,
   countActiveRuns,
   lockRunAdmission,
+  reapStrandedDraftRuns,
 } from "@ragtime/db";
 import { getOwnedRun } from "../lib/ownership.js";
 import { asSessionRequest } from "../types.js";
@@ -87,8 +88,9 @@ export function registerRunRoutes(app: FastifyInstance): void {
         // Decide admission under a lock so two simultaneous requests cannot
         // both read a stale count and both start a run.
         await lockRunAdmission(tx);
+        await reapStrandedDraftRuns(tx, STRANDED_DRAFT_SECONDS);
         const rejection = checkRunAdmission(
-          await countActiveRuns(tx, sessionId, DRAFT_ADMISSION_GRACE_SECONDS),
+          await countActiveRuns(tx, sessionId),
           {
             maxActiveRunsPerSession: config.maxActiveRunsPerSession,
             maxActiveRunsTotal: config.maxActiveRunsTotal,

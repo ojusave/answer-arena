@@ -18,22 +18,38 @@ export async function lockRunAdmission(db: Executor): Promise<void> {
   );
 }
 
-/** Runs currently holding provider quota and budget, deployment-wide and for one session. */
+/**
+ * Fails runs whose row was committed but whose workflow task was never
+ * dispatched, so one crashed request cannot hold a session's slot forever.
+ */
+export async function reapStrandedDraftRuns(
+  db: Executor,
+  staleAfterSeconds: number
+): Promise<void> {
+  await db.execute(sql`
+    UPDATE runs
+    SET status = 'failed',
+        error = 'Run never started: the workflow task was not dispatched.',
+        finished_at = now()
+    WHERE status = 'draft'
+      AND created_at < now() - (${staleAfterSeconds} * INTERVAL '1 second')
+  `);
+}
+
+/**
+ * Runs holding provider quota and budget, deployment-wide and for one session.
+ * Drafts count: the task may be queued rather than finished.
+ */
 export async function countActiveRuns(
   db: Executor,
-  sessionId: string,
-  draftGraceSeconds: number
+  sessionId: string
 ): Promise<ActiveRunCounts> {
   const rows = await db.execute<{ total: string; session: string }>(sql`
     SELECT
       COUNT(*) AS total,
       COUNT(*) FILTER (WHERE session_id = ${sessionId}) AS session
     FROM runs
-    WHERE status IN ('ingesting', 'running', 'aggregating')
-       OR (
-         status = 'draft'
-         AND created_at > now() - (${draftGraceSeconds} * INTERVAL '1 second')
-       )
+    WHERE status IN ('draft', 'ingesting', 'running', 'aggregating')
   `);
   return {
     total: Number(rows[0]?.total ?? 0),

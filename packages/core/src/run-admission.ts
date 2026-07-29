@@ -6,12 +6,17 @@
  */
 
 /**
- * A run sits in `draft` for the moment between its row landing and the
- * workflow accepting it. Counting drafts is what stops a double-click from
- * passing the check twice, and the grace window keeps a run stranded by a
- * crashed dispatch from blocking the session forever.
+ * A run stays in `draft` from the moment its row lands until the workflow task
+ * actually starts, which can be a while when tasks are queued. Drafts count
+ * toward the limits so a double-click cannot pass the check twice and so queued
+ * work is not admitted twice over.
+ *
+ * A dispatch failure marks the run failed, so a draft older than this only
+ * happens when the process died between committing the row and dispatching it.
+ * Those are failed on the next admission check rather than blocking a session
+ * forever.
  */
-export const DRAFT_ADMISSION_GRACE_SECONDS = 120;
+export const STRANDED_DRAFT_SECONDS = 600;
 
 export type ActiveRunCounts = {
   /** Active runs across every session on this deployment. */
