@@ -189,6 +189,7 @@ export const COPY = {
       "Choose a question and configure at least one setup. Run the comparison to see every answer against the same evidence.",
     inspectorEmpty:
       "Select an answer to view its retrieved passages and the generated answer.",
+    selectedSetup: "Selected setup",
     inspectorScoreAria: "Selected setup score",
     resizeAria: "Resize run and detail panes",
     runAgain: "New run",
