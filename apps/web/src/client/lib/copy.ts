@@ -36,11 +36,11 @@ export const TEST_STATUS_LABEL: Record<string, string> = {
   skipped: "Skipped",
 };
 
+/** Keyed by the stage names emitted in trial.stage events (see TrialStages). */
 export const PIPELINE_STAGE_LABEL: Record<string, string> = {
-  embed: "Embed query",
-  retrieve: "Retrieve",
+  retrieval: "Retrieval",
   rerank: "Rerank",
-  generate: "Generate",
+  generation: "Generation",
   judge: "Judge",
 };
 
@@ -225,6 +225,7 @@ export const COPY = {
     faithfulnessDimension: "Faithfulness",
     completenessDimension: "Completeness",
     eventLog: "Event log",
+    eventLogHint: "Newest first. Each line names the setup it belongs to.",
     howItWorks: "How it works",
     githubLink: "GitHub",
     footerStatus: (gatewayLabel: string) => `Workflow orchestration + ${gatewayLabel}`,
@@ -268,6 +269,28 @@ export const COPY = {
     legendRunning: "Running",
     legendHigh: "Complete",
     legendFailed: "Failed",
+  },
+  events: {
+    /** Appended to any line that belongs to one setup rather than the whole run. */
+    setupSuffix: (setup: string) => ` · ${setup}`,
+    stageFinished: (stage: string) => `${stage} finished`,
+    retry: (attempt: number) => `Retrying (attempt ${attempt})`,
+    answerFailed: (reason: string) => `Answer failed: ${reason}`,
+    indexed: (count: number, model: string, cost: string) =>
+      `Indexed ${count} passage${count === 1 ? "" : "s"} with ${model} (${cost})`,
+    indexFailed: (reason: string) => `Indexing failed: ${reason}`,
+    documentIndexed: (count: number) =>
+      `Document indexed (${count} passage${count === 1 ? "" : "s"})`,
+    runStatus: (label: string) => `Status: ${label}`,
+    partial: (scored: number, failed: number, stuck: number) =>
+      `Finished with gaps: ${scored} scored, ${failed} failed, ${stuck} unfinished`,
+    chaos: "Simulated error, retrying",
+    budgetTripped: "Stopped: budget limit reached",
+    seeLogs: "see logs",
+    unknown: "Update",
+    /** Distinguishes the lines on screen from everything the run has emitted. */
+    count: (shown: number, total: number) =>
+      shown < total ? `${shown} of ${total}` : `${total}`,
   },
   stages: {
     findPassages: (n: number) => `Retrieve (${n} passages)`,
