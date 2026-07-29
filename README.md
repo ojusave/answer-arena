@@ -4,14 +4,13 @@ Compare embedding, rerank, and generation models on the same corpus and question
 
 [Deploy to Render](https://render.com/deploy?repo=https://github.com/ojusave/ragtime) · [Live demo](https://ragtime-web.onrender.com/) · [Workflows docs](https://render.com/docs/workflows)
 
-![RAGtime results: top setup, score, cost, and latency](static/images/compare.png)
+![RAGtime comparing two RAG setups on the same question](static/images/compare.png)
 
 ## Highlights
 
 - **One OpenRouter key** covers embeddings, optional rerank, chat, and judging, with per-stage cost and latency receipts
 - **Render Workflows fan-out** runs setups in parallel with retries and lease-based trial claiming
-- **Phase-based workspace**: Configure the setups, watch plain-language progress while they run, then lead with the top setup and why it won
-- **Deterministic ranking**: judge score first, then lower cost, then lower answer latency; partial runs say “Leading so far,” never a fake final winner
+- **Live execution timeline** shows retrieve / rerank / generation / judge as Gantt-style bars per setup, including concurrency, retries, and failures
 - **Resumable stages**: completed retrieval / generation / judge work is checkpointed so retries skip what already finished
 - **Per-run budget ceiling** via pre-call reservations and an idempotent cost ledger (`MAX_RUN_BUDGET_USD`, default $5)
 - **Shared-deployment safe**: runs are session-scoped, and admission limits cap how many run at once per session and in total
@@ -20,22 +19,20 @@ Compare embedding, rerank, and generation models on the same corpus and question
 
 ## Overview
 
-RAGtime is a bake-off template for RAG pipelines. You load a corpus (the demo seeds 100 SciFact medical abstracts automatically), compose one or more setups (embedding + optional rerank + generation), and run them against the same question. The web service starts a `run_bakeoff` workflow; each trial claims a lease, walks retrieve → optional rerank → generate → judge, and streams stage events while the **Running** view shows which setup is searching, answering, or being scored.
+RAGtime is a bake-off template for RAG pipelines. You load a corpus (the demo seeds 100 SciFact medical abstracts automatically), compose one or more setups (embedding + optional rerank + generation), and run them against the same question. The web service starts a `run_bakeoff` workflow; each trial claims a lease, walks retrieve → optional rerank → generate → judge, and streams stage events into a live execution timeline in **Compare**.
 
-When the run finishes, **Results** answers one question first: which setup should you choose, and why. Charts, CSV export, raw model IDs, and the exact-duration technical timeline stay behind progressive disclosures so they do not compete with the decision.
+The interesting part is not the leaderboard itself. It is seeing *why* two setups diverge: which passages each one retrieved, what the judge scored, how long each stage took side by side, and how much each stage cost.
 
 ## Usage
 
 1. Open the [live demo](https://ragtime-web.onrender.com/) or your own deploy. The SciFact demo library seeds itself on first load.
-2. In **Configure**, pick a sample question (or write your own) and compose setups.
-3. Click **Run**. The **Running** view shows one live status sentence, a checklist row per setup, answers ready, elapsed time, and spend. The Gantt-style technical timeline stays collapsed.
-4. When the run completes, **Results** leads with the top setup and plain-language reason. Use **See answer and evidence** to open **Inspect** for the full answer, judge dimensions, and passages.
+2. Pick a sample question (or write your own) and compose setups in **Configure**.
+3. Click **Run**. Answers appear side by side in **Compare**; the live execution timeline shows stage duration, concurrency, retries, and failures for each setup.
+4. Select an answer to open **Inspect**: retrieved passages, stage receipts, and judge dimensions.
 
 ![Configure question and setups before a run](static/images/configure.png)
 
-![Running two setups with plain-language progress](static/images/running.png)
-
-![Inspect answer, verdict, and evidence beside results](static/images/inspect.png)
+![Inspect passages and judge score beside the live execution timeline](static/images/inspect.png)
 
 ## Deploy on Render
 
@@ -151,7 +148,7 @@ ragtime/
   packages/gateway-openrouter/
   packages/gateway-fake/
   render.yaml            Blueprint (web + Postgres)
-  static/images/         README screenshots (configure, running, results, inspect)
+  static/images/         README screenshots from the live deploy
 ```
 
 ## Troubleshooting
@@ -165,7 +162,7 @@ ragtime/
 | `429` with "running N comparisons already" | The deployment hit `MAX_ACTIVE_RUNS_TOTAL`. Retry shortly, or raise it if your Postgres plan and provider quota allow |
 | Empty model pickers | `OPENROUTER_API_KEY` on the web service; check `/api/models` |
 
-Logs: web service and Workflow service logs in the Render Dashboard. The app turns trial lifecycle events into the Running checklist and the collapsed Technical timeline.
+Logs: web service and Workflow service logs in the Render Dashboard. The app turns trial lifecycle events into the live execution timeline.
 
 ## Tests
 
@@ -173,7 +170,7 @@ Logs: web service and Workflow service logs in the Render Dashboard. The app tur
 pnpm test
 ```
 
-Builds workspace packages, then runs core / db / gateway / web unit tests (including setup ranking and execution-timeline builders).
+Builds workspace packages, then runs core / db / gateway / web unit tests (including execution-timeline builders).
 
 ## Contributing
 

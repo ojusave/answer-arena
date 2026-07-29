@@ -36,35 +36,16 @@ export const TEST_STATUS_LABEL: Record<string, string> = {
   skipped: "Skipped",
 };
 
-/**
- * Keyed by trial.stage event names. Labels match answer-card roles
- * (Search / Rerank / Answer) so beginners see one vocabulary.
- */
+/** Keyed by the stage names emitted in trial.stage events (see TrialStages). */
 export const PIPELINE_STAGE_LABEL: Record<string, string> = {
-  retrieval: "Search",
+  retrieval: "Retrieval",
   rerank: "Rerank",
-  generation: "Answer",
+  generation: "Generation",
   judge: "Judge",
 };
 
 export function stageLabel(stage: string): string {
   return PIPELINE_STAGE_LABEL[stage] ?? stage.replace(/_/g, " ");
-}
-
-/** Present-tense phrase for the live timeline status line. */
-export function stageProgressPhrase(stage: string): string {
-  switch (stage) {
-    case "retrieval":
-      return "searching the library";
-    case "rerank":
-      return "reranking passages";
-    case "generation":
-      return "writing an answer";
-    case "judge":
-      return "scoring the answer";
-    default:
-      return stageLabel(stage).toLowerCase();
-  }
 }
 
 export function formatMatrixSummary(args: {
@@ -78,7 +59,7 @@ export function formatMatrixSummary(args: {
   const setups = args.embedCount * args.rerankCount * args.genCount;
   const trialCount = setups * args.questionCount;
   const overLimit = trialCount > args.maxTrials;
-  const line = `Comparing ${setups} setup${setups === 1 ? "" : "s"} on ${args.questionCount} question${args.questionCount === 1 ? "" : "s"} (${trialCount} answer${trialCount === 1 ? "" : "s"}). Spend limit $${args.budgetUsd.toFixed(2)}.`;
+  const line = `${setups} setup${setups === 1 ? "" : "s"} × ${args.questionCount} question${args.questionCount === 1 ? "" : "s"} = ${trialCount} answer${trialCount === 1 ? "" : "s"}. Budget $${args.budgetUsd.toFixed(2)}.`;
   return { line, trialCount, overLimit };
 }
 
@@ -91,7 +72,7 @@ export function formatSetupSummary(args: {
 }): { line: string; trialCount: number; overLimit: boolean } {
   const trialCount = args.setupCount * args.questionCount;
   const overLimit = trialCount > args.maxTrials;
-  const line = `Comparing ${args.setupCount} setup${args.setupCount === 1 ? "" : "s"} on ${args.questionCount} question${args.questionCount === 1 ? "" : "s"} (${trialCount} answer${trialCount === 1 ? "" : "s"}). Spend limit $${args.budgetUsd.toFixed(2)}.`;
+  const line = `${args.setupCount} setup${args.setupCount === 1 ? "" : "s"} × ${args.questionCount} question${args.questionCount === 1 ? "" : "s"} = ${trialCount} answer${trialCount === 1 ? "" : "s"}. Budget $${args.budgetUsd.toFixed(2)}.`;
   return { line, trialCount, overLimit };
 }
 
@@ -157,55 +138,14 @@ export const COPY = {
   app: {
     subtitle: "RAG pipeline comparison",
     zones: { inputs: "Configure", run: "Compare", detail: "Inspect" },
-    phaseConfigure: "Configure",
-    phaseRunning: "Running",
-    phaseResults: "Results",
-    backToConfigure: "New comparison",
-    closeEvidence: "Close evidence",
-    runningSetupsHeading: (n: number) =>
-      `Running ${n} setup${n === 1 ? "" : "s"} on the same question`,
-    answersReady: (done: number, total: number) =>
-      `${done} of ${total} answer${total === 1 ? "" : "s"} ready`,
-    spendLimit: (spent: string, budget: string) => `Spend ${spent} / ${budget}`,
-    topSetup: "Top setup",
-    leadingSoFar: "Leading so far",
-    noWinnerYet: "No winner yet",
-    whyItLeads: "Why it leads",
-    rankingBasis:
-      "Ranked by judge score. Ties break to lower cost, then lower answer latency.",
-    seeAnswerAndEvidence: "See answer and evidence",
-    setupDetails: "Setup details",
-    technicalTimeline: "Technical timeline",
-    advancedResults: "Advanced results",
-    runnerUp: "Runner-up",
-    costVsNext: (delta: string) =>
-      delta.startsWith("-") ? `${delta.slice(1)} cheaper than next` : `${delta} more than next`,
-    latencyVsNext: (delta: string) =>
-      delta.startsWith("-")
-        ? `${delta.slice(1)} faster than next`
-        : `${delta} slower than next`,
-    stageSearch: "Search",
-    stageRerank: "Rerank",
-    stageAnswer: "Answer",
-    stageJudge: "Judge",
-    stageDone: "done",
-    stageActive: "active",
-    stageWaiting: "waiting",
-    stageSkipped: "skipped",
-    stageFailed: "failed",
-    configureWhileRunning: "This comparison is running. Cancel it to change the setups.",
     welcomeTitle: "Compare retrieval pipelines against the same evidence.",
     welcomeBody:
       "Load the sample corpus, choose the models in each setup, then compare their answers, evidence, cost, and latency.",
     questionSection: "Question",
     modelsSection: "Setups",
     sampleQuestions: "Sample questions",
-    sampleQuestionsInfo:
-      "Pre-written questions that match the demo medical abstracts. Pick one to fill the question box, or ignore this and type your own.",
     promptPlaceholder: "What does the evidence say about…?",
     yourQuestion: "Question text",
-    yourQuestionInfo:
-      "The exact question every setup will answer. Keep it the same so you are comparing models, not different prompts.",
     embedLabel: "Embedding",
     embedHint: "Finds candidate passages",
     embedInfo:
@@ -215,8 +155,6 @@ export const COPY = {
     rerankInfo:
       "A reranker re-scores the passages from the first search and moves the most relevant ones to the top. It is optional: leave it as None to skip this step.",
     noRerankLabel: "Include runs without rerank",
-    noRerankInfo:
-      "When Matrix mode expands combinations, also create setups that skip reranking. Useful to see whether a reranker helps versus the same search + answer models alone.",
     genLabel: "Generation",
     genHint: "Writes the answer",
     genInfo:
@@ -238,17 +176,9 @@ export const COPY = {
       "Pick models per stage and run every combination. Expanding fills the setup list above.",
     expandMatrix: "Expand into setups",
     advanced: "Retrieval settings",
-    retrieveLabel: "Passages to search",
-    retrieveInfo:
-      "How many passages the embedding search returns first (sometimes called Retrieve K). Higher can find more evidence but costs more and may add noise. Default is fine to start.",
-    finalKLabel: "Passages for the answer",
-    finalKInfo:
-      "How many passages the answer model actually reads (sometimes called Final K). If you use a reranker, it reorders the search results and keeps this many on top. Keep this less than or equal to Passages to search.",
-    budgetLabel: "Spend limit (USD)",
-    budgetInfo:
-      "Maximum this comparison can spend on model calls. The run stops new paid calls once reservations would exceed this amount. Lower it for cheap smoke tests; raise it for larger matrices.",
-    runSummaryInfo:
-      "Each setup answers each question once. So 2 setups × 1 question means 2 answers side by side. The spend limit is the max this run can cost.",
+    retrieveLabel: "Retrieve K",
+    finalKLabel: "Final K",
+    budgetLabel: "Budget (USD)",
     runButton: "Run",
     runningButton: "Running…",
     loadDemo: "Load demo library (100 medical abstracts)",
@@ -276,20 +206,18 @@ export const COPY = {
     spend: (spent: string, budget: string) => `$${spent} / $${budget}`,
     elapsed: (sec: number) => `${sec.toFixed(1)}s`,
     bestScore: "Best score",
-    answersTitle: "Compare answers",
-    answersHint: "Same question for every setup. Open one to read the full answer and its evidence.",
+    answersTitle: "Answers",
+    answersHint: "Same question, one answer per setup. Select one to see its passages.",
     answerPending: "Waiting to run",
-    answerRunning: "Writing an answer…",
+    answerRunning: "Generating answer…",
     answerFailed: "This setup did not produce an answer.",
     answerEmpty: "No answer returned.",
-    answerCost: "Cost",
-    answerLatency: "Answer time",
     setups: "Setups",
     setupCount: (n: number) => `${n} setup${n === 1 ? "" : "s"}`,
     setupsScored: (scored: number, total: number) =>
       `${scored} of ${total} setup${total === 1 ? "" : "s"} scored`,
-    awaitingScores: "Waiting for the first scored answer",
-    arenaHint: "Open a setup to inspect its evidence.",
+    awaitingScores: "Waiting for scored setups",
+    arenaHint: "Select a setup to inspect its evidence.",
     judgeScore: "Judge score",
     judgeScoreTooltip:
       "A judge model rates faithfulness, correctness, and completeness from the retrieved passages.",
@@ -300,33 +228,9 @@ export const COPY = {
     correctnessDimension: "Correctness",
     faithfulnessDimension: "Faithfulness",
     completenessDimension: "Completeness",
-    answerFromSetup: "Answer from this setup",
-    howAnswerScored: "How the answer scored",
-    evidenceUsed: "Evidence used",
-    evidenceSummary: (documents: number, retrieved: number, used: number) =>
-      `Searched ${documents} documents · found ${retrieved} passages · used ${used}`,
-    evidenceProvenanceInfo:
-      "These passages came from the document library loaded into this RAGtime demo (for example SciFact medical abstracts). Search ranked them by similarity to your question. They are not live web results.",
-    usedInAnswer: "Used in answer",
-    searchResultRank: (n: number) => `Search result #${n}`,
-    moreSearchResults: (count: number) => `More search results (${count})`,
-    showMoreResults: (count: number) => `Show ${count} more results`,
-    hideMoreResults: "Hide extra results",
-    readPassage: "Read passage",
-    collapsePassage: "Collapse",
-    similarityScoreInfo:
-      "This is how close the passage is to your question in embedding space. Higher means a closer match, not that the passage is factually correct.",
-    runDetails: "Run details",
-    runDetailsHint: "Models, timing, and spend for this setup.",
-    noEvidenceYet: "No passages were retrieved for this setup yet.",
-    noAnswerYet: "This setup has not produced an answer yet.",
-    waitingForJudge: "Waiting for the judge score…",
-    executionTimeline: "What's running",
+    executionTimeline: "Execution timeline",
     executionTimelineHint:
-      "Each colored bar is one step. Bars that line up are working at the same time. Click a row to inspect that setup.",
-    executionTimelineOverall: "Overall",
-    executionTimelineWaiting: "Waiting for setups to start…",
-    executionTimelineLive: "Live",
+      "Clock time across setups. Bar position reveals parallel work; hover a stage for duration and attempt.",
     howItWorks: "How it works",
     githubLink: "GitHub",
     footerStatus: (gatewayLabel: string) => `Workflow orchestration + ${gatewayLabel}`,
@@ -372,20 +276,15 @@ export const COPY = {
     legendFailed: "Failed",
   },
   stages: {
-    findPassages: (n: number) => `Search results (${n})`,
+    findPassages: (n: number) => `Retrieve (${n} passages)`,
     rerank: "Rerank",
     kept: (n: number) => `${n} passage${n === 1 ? "" : "s"} kept`,
-    writeAnswer: "Answer",
+    writeAnswer: "Generate",
     rateAnswer: (model: string) => `Judge (${model})`,
     costLatency: "Cost and latency",
     passageLabel: (idx: number) => `Passage ${idx}`,
     scores: (f: number, c: number, comp: number) =>
       `Faithfulness ${f} · Correctness ${c} · Completeness ${comp}`,
-    embeddingModel: "Search model",
-    rerankModel: "Rerank model",
-    answerModel: "Answer model",
-    judgeModel: "Judge model",
-    none: "None",
   },
   notify: {
     comparisonStarted: "Run started",

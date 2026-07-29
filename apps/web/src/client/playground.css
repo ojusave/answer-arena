@@ -117,164 +117,11 @@
   overflow-y: auto;
 }
 
-.workspace-phase {
+.workspace-page {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-
-.workspace-pane--solo {
-  flex: 1;
-  min-height: 0;
-  width: min(100%, 720px);
-  margin: 0 auto;
-  border: 0;
-}
-
-.workspace-phase--running .workspace-pane--solo,
-.workspace-phase--results .workspace-pane--solo {
-  width: min(100%, 960px);
-}
-
-.workspace-phase--results .workspace-resizable {
-  flex: 1;
-}
-
-.setup-progress__focus {
-  line-height: 1.45;
-}
-
-.setup-progress__row {
-  display: grid;
-  gap: 0.55rem;
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--rag-border);
-  background: var(--rag-surface);
-  text-align: left;
-  cursor: pointer;
-}
-
-.setup-progress__row:hover,
-.setup-progress__row--selected {
-  border-color: var(--pg-accent-border);
-  background: var(--pg-accent-soft);
-}
-
-.setup-progress__row:focus-visible {
-  outline: 2px solid var(--pg-accent);
-  outline-offset: 2px;
-}
-
-.setup-progress__stages {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.5rem;
-  font-size: 0.72rem;
-  color: var(--rag-muted);
-}
-
-.setup-progress__stage--active {
-  color: var(--pg-accent);
-  font-weight: 650;
-}
-
-.setup-progress__stage--done {
-  color: var(--mantine-color-text);
-}
-
-.setup-progress__stage--failed {
-  color: var(--render-red-500);
-}
-
-.setup-progress__arrow {
-  margin: 0 0.15rem;
-  color: var(--rag-border);
-}
-
-.setup-progress__stage-state {
-  text-transform: lowercase;
-}
-
-.answer-card-score-block {
-  margin-bottom: 0.55rem;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid var(--score-current-border);
-  background: var(--score-current-soft);
-  color: var(--score-current);
-}
-
-.answer-card__cta {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.4rem 0.7rem;
-  border: 1px solid var(--pg-accent-border);
-  background: var(--pg-accent);
-  color: #fff;
-  font-size: 0.78rem;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.answer-card__cta:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.answer-card__cta:focus-visible,
-.answer-card__details-toggle:focus-visible,
-.technical-timeline__toggle:focus-visible,
-.results-panel__toggle:focus-visible {
-  outline: 2px solid var(--pg-accent);
-  outline-offset: 2px;
-}
-
-.answer-card__details-toggle,
-.technical-timeline__toggle,
-.results-panel__toggle {
-  display: grid;
-  gap: 0.15rem;
-  color: var(--pg-accent);
-  font-size: 0.75rem;
-  font-weight: 650;
-  text-align: left;
-  cursor: pointer;
-}
-
-.answer-card__details {
-  padding: 0.55rem 0.65rem;
-  border: 1px solid var(--rag-border);
-  background: var(--rag-subtle);
-}
-
-.technical-timeline__body {
-  margin-top: 0.75rem;
-}
-
-.technical-timeline__body .execution-timeline {
-  border: 0;
-  padding: 0;
-  background: transparent;
-}
-
-.results-panel__toggle {
-  width: 100%;
-}
-
-.run-summary--live,
-.run-summary--done {
-  padding: 1rem 1.1rem;
-}
-
-@media (max-width: 48em) {
-  .workspace-pane--solo {
-    width: 100%;
-  }
-
-  .setup-progress__stages {
-    flex-direction: column;
-  }
 }
 
 .pg-zone-label {
@@ -649,29 +496,9 @@
   background: color-mix(in srgb, var(--rag-subtle) 60%, transparent);
 }
 
-.execution-row--interactive {
-  cursor: pointer;
-}
-
-.execution-row--interactive:hover {
-  background: color-mix(in srgb, var(--pg-accent-soft) 55%, transparent);
-}
-
-.execution-row--interactive:focus-visible {
-  outline: 2px solid var(--pg-accent);
-  outline-offset: -2px;
-}
-
-.execution-row--selected {
-  background: color-mix(in srgb, var(--pg-accent-soft) 80%, transparent);
-  box-shadow: inset 3px 0 0 var(--pg-accent);
-}
-
 .execution-row__label {
   min-width: 0;
   padding: 0.55rem 0;
-  display: grid;
-  gap: 0.15rem;
 }
 
 .execution-row__track {
@@ -1001,18 +828,29 @@
   background: var(--rag-subtle);
   color: inherit;
   text-align: left;
+  cursor: pointer;
   transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
 }
 
-.answer-card:hover {
+.answer-card:hover:not(:disabled) {
   border-color: var(--pg-accent-border);
   background: var(--rag-surface);
+}
+
+.answer-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--pg-accent) 35%, transparent);
+  outline-offset: 2px;
 }
 
 .answer-card--selected {
   border-color: var(--pg-accent);
   background: var(--pg-accent-soft);
   box-shadow: 0 0 0 1px var(--pg-accent-border);
+}
+
+.answer-card:disabled {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .answer-card-body {

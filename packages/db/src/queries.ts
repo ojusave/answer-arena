@@ -1,18 +1,7 @@
-import { sql, eq, inArray, count } from "drizzle-orm";
+import { sql, eq, inArray } from "drizzle-orm";
 import type { ComboResult } from "@ragtime/core";
 import type { Db } from "./client.js";
-import { chunks, combos, corpora, documents, runs } from "./schema.js";
-
-/** Chunk text plus the document/corpus labels Inspect needs for provenance. */
-export type ChunkWithSource = {
-  id: string;
-  idx: number;
-  content: string;
-  documentId: string;
-  documentTitle: string;
-  sourceUri: string | null;
-  corpusName: string;
-};
+import { chunks, combos, runs } from "./schema.js";
 
 export async function getComboResults(db: Db, runId: string): Promise<ComboResult[]> {
   const run = await db.query.runs.findFirst({
@@ -114,43 +103,6 @@ export async function getChunksByIds(
     .from(chunks)
     .where(inArray(chunks.id, chunkIds));
   return new Map(rows.map((r) => [r.id, r]));
-}
-
-/** Loads chunks with document title, source URI, and corpus name for Inspect. */
-export async function getChunksWithSources(
-  db: Db,
-  chunkIds: string[]
-): Promise<Map<string, ChunkWithSource>> {
-  if (chunkIds.length === 0) return new Map();
-  const rows = await db
-    .select({
-      id: chunks.id,
-      idx: chunks.idx,
-      content: chunks.content,
-      documentId: documents.id,
-      documentTitle: documents.title,
-      sourceUri: documents.sourceUri,
-      corpusName: corpora.name,
-    })
-    .from(chunks)
-    .innerJoin(documents, eq(chunks.documentId, documents.id))
-    .innerJoin(corpora, eq(chunks.corpusId, corpora.id))
-    .where(inArray(chunks.id, chunkIds));
-  return new Map(rows.map((r) => [r.id, r]));
-}
-
-/** Counts ready documents in a corpus for the Inspect evidence summary. */
-export async function countReadyDocuments(
-  db: Db,
-  corpusId: string
-): Promise<number> {
-  const [row] = await db
-    .select({ value: count() })
-    .from(documents)
-    .where(
-      sql`${documents.corpusId} = ${corpusId} AND ${documents.status} = 'ready'`
-    );
-  return Number(row?.value ?? 0);
 }
 
 export async function getComboById(db: Db, comboId: string) {

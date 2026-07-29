@@ -1,16 +1,14 @@
-import { Badge, Collapse, Group, Loader, Stack, Text, UnstyledButton } from "@mantine/core";
-import { useState } from "react";
+import { Badge, Group, Loader, Stack, Text, Tooltip } from "@mantine/core";
 import type { ComboResult } from "@ragtime/core";
 import { COPY, TEST_STATUS_LABEL } from "../../lib/copy";
 import { comboModels } from "../../lib/combo-display";
 import { scorePercent, scoreTone } from "../../lib/score-display";
-import { rankSetups } from "../../lib/setup-ranking";
 import type { GridCell } from "../../hooks/types";
+import ProviderMark from "./ProviderMark";
 
 type Props = {
   combos: ComboResult[];
   grid: GridCell[];
-  runStatus: string;
   selectedTrialId: string | null;
   onSelect: (trialId: string) => void;
 };
@@ -18,22 +16,33 @@ type Props = {
 function statusColor(status: string): string {
   if (status === "complete") return "green";
   if (status === "failed") return "red";
-  if (status === "running") return "renderPurple";
+  if (status === "running") return "indigo";
   return "gray";
 }
 
-/** Decision-oriented answer cards: score, preview, cost, latency, evidence CTA. */
-export default function AnswerCards({
-  combos,
-  grid,
-  runStatus,
-  selectedTrialId,
-  onSelect,
-}: Props) {
-  const [openDetails, setOpenDetails] = useState<string | null>(null);
+function ModelPill({
+  role,
+  name,
+  modelId,
+  muted,
+}: {
+  role: string;
+  name: string;
+  modelId?: string;
+  muted?: boolean;
+}) {
+  return (
+    <span className={`arena-model-pill${muted ? " arena-model-pill--muted" : ""}`}>
+      {modelId && <ProviderMark modelId={modelId} />}
+      <span className="arena-model-pill__role">{role}</span>
+      <span className="arena-model-pill__name">{name}</span>
+    </span>
+  );
+}
+
+/** Renders the generated answer for each setup, with scores kept to a small footer. */
+export default function AnswerCards({ combos, grid, selectedTrialId, onSelect }: Props) {
   const lookup = new Map(grid.map((g) => [g.comboId, g]));
-  const ranking = rankSetups({ combos, grid, runStatus });
-  const rankByCombo = new Map(ranking.ranked.map((row) => [row.comboId, row]));
 
   return (
     <Stack gap="sm" className="answer-cards pg-arena-card">
@@ -45,63 +54,36 @@ export default function AnswerCards({
       </Stack>
 
       <div className="answer-cards-grid">
-        {combos.map((combo, index) => {
+        {combos.map((combo) => {
           const cell = lookup.get(combo.comboId);
-          const ranked = rankByCombo.get(combo.comboId);
           const status = cell?.status ?? "pending";
           const statusLabel = TEST_STATUS_LABEL[status] ?? "Pending";
           const selected = cell?.trialId === selectedTrialId;
           const models = comboModels(combo);
-          const score = ranked?.scorePercent ?? scorePercent(cell?.overallScore);
+          const score = scorePercent(cell?.overallScore);
           const tone = scoreTone(score);
           const answer = cell?.answer?.trim();
-          const detailsOpen = openDetails === combo.comboId;
-          const badge =
-            ranking.hasScores && ranked?.rank === 1
-              ? ranking.isFinal
-                ? COPY.app.topSetup
-                : COPY.app.leadingSoFar
-              : ranking.hasScores && ranked?.rank === 2
-                ? COPY.app.runnerUp
-                : null;
 
           return (
-            <div
+            <button
               key={combo.comboId}
+              type="button"
               className={`answer-card${selected ? " answer-card--selected" : ""}`}
+              disabled={!cell}
+              aria-pressed={selected}
+              aria-label={`${models.answer} setup, ${statusLabel}${score == null ? "" : `, score ${score} out of 100`}`}
+              onClick={() => cell && onSelect(cell.trialId)}
             >
-              <Group justify="space-between" align="flex-start" gap="sm" mb={6}>
-                <Stack gap={2} style={{ minWidth: 0 }}>
-                  <Text size="sm" fw={700}>
-                    Setup {index + 1}
-                  </Text>
-                  <Text size="xs" c="dimmed" lineClamp={1}>
-                    {models.answer}
-                  </Text>
-                </Stack>
-                <Group gap={6}>
-                  {badge && (
-                    <Badge color="renderPurple" variant="light" size="sm">
-                      {badge}
-                    </Badge>
-                  )}
-                  <Badge color={statusColor(status)} variant="light" size="sm">
-                    {statusLabel}
-                  </Badge>
-                </Group>
+              <Group gap={6} wrap="wrap" className="answer-card-models">
+                <ModelPill role="Search" name={models.search} modelId={combo.embeddingModel} />
+                <ModelPill
+                  role="Rerank"
+                  name={models.rerank ?? "skip"}
+                  modelId={combo.rerankModel ?? undefined}
+                  muted={!models.rerank}
+                />
+                <ModelPill role="Answer" name={models.answer} modelId={combo.genModel} />
               </Group>
-
-              <div className={`answer-card-score-block score-tone--${tone}`}>
-                <Text size="xs" tt="uppercase" fw={600}>
-                  {COPY.app.judgeScore}
-                </Text>
-                <Group gap={4} align="baseline">
-                  <Text className="answer-card-score-number">{score ?? "—"}</Text>
-                  <Text size="sm" c="dimmed">
-                    /100
-                  </Text>
-                </Group>
-              </div>
 
               <div className="answer-card-body">
                 {status === "running" && !answer ? (
@@ -120,7 +102,7 @@ export default function AnswerCards({
                     {COPY.app.answerFailed}
                   </Text>
                 ) : answer ? (
-                  <Text size="sm" className="answer-card-text" lineClamp={5}>
+                  <Text size="sm" className="answer-card-text">
                     {answer}
                   </Text>
                 ) : (
@@ -130,56 +112,26 @@ export default function AnswerCards({
                 )}
               </div>
 
-              <Group gap="md" mt="sm" wrap="wrap">
-                <Text size="xs" c="dimmed">
-                  {COPY.app.answerCost}: $
-                  {ranked?.costUsd != null ? ranked.costUsd.toFixed(4) : "—"}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  {COPY.app.answerLatency}:{" "}
-                  {ranked?.latencyMs != null
-                    ? `${Math.round(ranked.latencyMs)}ms`
-                    : "—"}
-                </Text>
+              <Group justify="space-between" align="center" className="answer-card-footer">
+                <Group gap={6} align="center">
+                  <Badge color={statusColor(status)} variant="light" size="sm">
+                    {statusLabel}
+                  </Badge>
+                  {cell?.judgeOnly && (
+                    <Tooltip label={COPY.app.judgeOnlyTooltip} multiline w={220} withArrow>
+                      <Badge color="grape" variant="light" size="sm" style={{ cursor: "help" }}>
+                        {COPY.app.judgeOnlyBadge}
+                      </Badge>
+                    </Tooltip>
+                  )}
+                </Group>
+                <span className={`answer-card-score score-tone--${tone}`}>
+                  <span className="answer-card-score-label">{COPY.app.judgeScore}</span>
+                  <span className="answer-card-score-number">{score ?? "—"}</span>
+                  <span className="answer-card-score-scale">/100</span>
+                </span>
               </Group>
-
-              <Group gap="sm" mt="sm" wrap="wrap">
-                <button
-                  type="button"
-                  className="answer-card__cta"
-                  disabled={!cell}
-                  onClick={() => cell && onSelect(cell.trialId)}
-                >
-                  {COPY.app.seeAnswerAndEvidence}
-                </button>
-                <UnstyledButton
-                  type="button"
-                  className="answer-card__details-toggle"
-                  onClick={() =>
-                    setOpenDetails((current) =>
-                      current === combo.comboId ? null : combo.comboId
-                    )
-                  }
-                  aria-expanded={detailsOpen}
-                >
-                  {COPY.app.setupDetails} {detailsOpen ? "▾" : "▸"}
-                </UnstyledButton>
-              </Group>
-
-              <Collapse in={detailsOpen} keepMounted={false}>
-                <Stack gap={4} mt="xs" className="answer-card__details">
-                  <Text size="xs">
-                    {COPY.app.stageSearch}: {models.search}
-                  </Text>
-                  <Text size="xs">
-                    {COPY.app.stageRerank}: {models.rerank ?? COPY.stages.none}
-                  </Text>
-                  <Text size="xs">
-                    {COPY.app.stageAnswer}: {models.answer}
-                  </Text>
-                </Stack>
-              </Collapse>
-            </div>
+            </button>
           );
         })}
       </div>

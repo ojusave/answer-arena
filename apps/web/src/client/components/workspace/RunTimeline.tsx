@@ -1,16 +1,14 @@
-import { Group, Stack, Text } from "@mantine/core";
+import { Badge, Group, Stack, Text } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
-import { COPY, stageLabel } from "../../lib/copy";
+import { COPY } from "../../lib/copy";
 import {
   buildExecutionTimeline,
-  describeTimelineFocus,
   formatDuration,
+  spanPosition,
   type SetupLabels,
 } from "../../lib/execution-timeline";
-import TimelineSetupRow from "./TimelineSetupRow";
-import TimelineSpanBar from "./TimelineSpanBar";
 
 type EventRow = {
   id: number;
@@ -20,7 +18,12 @@ type EventRow = {
 };
 
 const TERMINAL = new Set(["complete", "failed", "canceled", "budget_exceeded"]);
-const LEGEND_STAGES = ["retrieval", "rerank", "generation", "judge"] as const;
+function statusColor(status: string): string {
+  if (status === "complete") return "green";
+  if (status === "failed") return "red";
+  if (status === "running") return "renderPurple";
+  return "gray";
+}
 
 function useLiveNow(active: boolean): number {
   const [now, setNow] = useState(() => Date.now());
@@ -38,16 +41,12 @@ export default function RunTimeline({
   setups,
   startedAt,
   finishedAt,
-  selectedTrialId,
-  onSelectTrial,
 }: {
   runId: string | null;
   runStatus: string;
   setups: SetupLabels;
   startedAt?: string | null;
   finishedAt?: string | null;
-  selectedTrialId?: string | null;
-  onSelectTrial?: (trialId: string) => void;
 }) {
   const [events, setEvents] = useState<EventRow[]>([]);
   const cursorRef = useRef(0);
@@ -66,6 +65,8 @@ export default function RunTimeline({
       const rows = await api<EventRow[]>(`/api/runs/${runId}/events?after=${cursorRef.current}`);
       if (rows.length > 0) {
         cursorRef.current = Math.max(cursorRef.current, rows[rows.length - 1]!.id);
+        // Deduplicate by event id: overlapping polls can return the same rows,
+        // but two setups finishing the same stage are distinct events.
         setEvents((prev) => {
           const seen = new Set(prev.map((e) => e.id));
           const fresh = rows.filter((row) => !seen.has(row.id));
@@ -91,29 +92,26 @@ export default function RunTimeline({
     [events, setups, nowMs, startedAt, finishedAt, runStatus]
   );
 
-  const focusLine = useMemo(() => describeTimelineFocus(timeline), [timeline]);
-
   return (
     <Stack gap="md" className="execution-timeline pg-arena-card pg-arena-card--subtle">
       <Group justify="space-between" align="flex-start" gap="sm">
-        <Stack gap={4}>
+        <Stack gap={2}>
           <Text className="pg-section-title">{COPY.app.executionTimeline}</Text>
-          <Text size="sm">{focusLine}</Text>
           <Text size="xs" c="dimmed">
             {COPY.app.executionTimelineHint}
           </Text>
         </Stack>
         <Text size="xs" ff="monospace" c="dimmed">
-          {active ? `${COPY.app.executionTimelineLive} · ` : ""}
+          {active ? "LIVE · " : ""}
           {formatDuration(timeline.durationMs)}
         </Text>
       </Group>
 
       <Group gap="md" className="execution-timeline__legend" aria-label="Stage legend">
-        {LEGEND_STAGES.map((stage) => (
+        {["retrieval", "rerank", "generation", "judge"].map((stage) => (
           <span key={stage} className={`execution-legend execution-legend--${stage}`}>
             <span aria-hidden="true" />
-            {stageLabel(stage)}
+            {stage === "retrieval" ? "Retrieve" : stage[0]!.toUpperCase() + stage.slice(1)}
           </span>
         ))}
       </Group>
@@ -135,16 +133,16 @@ export default function RunTimeline({
         <div className="execution-row execution-row--summary">
           <div className="execution-row__label">
             <Text size="xs" fw={600}>
-              {COPY.app.executionTimelineOverall}
+              Comparison
             </Text>
-            <Text size="xs" c="dimmed">
-              all setups
+            <Text size="xs" c="dimmed" ff="monospace">
+              workflow
             </Text>
           </div>
           <div
             className="execution-row__track"
             role="img"
-            aria-label={`Overall progress: ${runStatus}`}
+            aria-label={`Comparison workflow: ${runStatus}`}
           >
             {[0, 25, 50, 75, 100].map((tick) => (
               <span
@@ -154,26 +152,77 @@ export default function RunTimeline({
                 aria-hidden="true"
               />
             ))}
-            {timeline.summarySpans.map((span) => (
-              <TimelineSpanBar key={span.key} span={span} timeline={timeline} />
-            ))}
+            {timeline.summarySpans.map((span) => {
+              const position = spanPosition(span, timeline);
+              const title = `${span.label} · ${formatDuration(span.latencyMs)} · ${span.status}`;
+              return (
+                <span
+                  key={span.key}
+                  className={`execution-span execution-span--${span.stage} execution-span--${span.status}`}
+                  style={{ left: `${position.left}%`, width: `${position.width}%` }}
+                  title={title}
+                  aria-label={title}
+                >
+                  {position.width >= 12 ? span.label : ""}
+                </span>
+              );
+            })}
           </div>
         </div>
 
         {timeline.rows.map((row) => (
-          <TimelineSetupRow
-            key={row.trialId}
-            row={row}
-            selected={row.trialId === selectedTrialId}
-            interactive={Boolean(onSelectTrial)}
-            onSelect={onSelectTrial}
-            timeline={timeline}
-          />
+          <div className="execution-row" key={row.trialId}>
+            <div className="execution-row__label">
+              <Text size="xs" fw={600} lineClamp={1} title={row.label}>
+                {row.label}
+              </Text>
+              <Group gap={5} wrap="nowrap">
+                <Badge color={statusColor(row.status)} variant="light" size="xs">
+                  {row.status}
+                </Badge>
+                {row.retries > 0 && (
+                  <Text size="xs" c="orange" ff="monospace">
+                    retry {row.retries}
+                  </Text>
+                )}
+              </Group>
+            </div>
+
+            <div
+              className="execution-row__track"
+              role="img"
+              aria-label={`${row.label}: ${row.status}, attempt ${row.attempt}`}
+            >
+              {[0, 25, 50, 75, 100].map((tick) => (
+                <span
+                  key={tick}
+                  className="execution-row__gridline"
+                  style={{ left: `${tick}%` }}
+                  aria-hidden="true"
+                />
+              ))}
+              {row.spans.map((span) => {
+                const position = spanPosition(span, timeline);
+                const title = `${span.label} · attempt ${span.attempt} · ${formatDuration(span.latencyMs)} · ${span.status}`;
+                return (
+                  <span
+                    key={span.key}
+                    className={`execution-span execution-span--${span.stage} execution-span--${span.status}`}
+                    style={{ left: `${position.left}%`, width: `${position.width}%` }}
+                    title={title}
+                    aria-label={title}
+                  >
+                    {position.width >= 12 ? span.label : ""}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
         ))}
 
         {timeline.rows.length === 0 && (
           <Text size="sm" c="dimmed" py="sm">
-            {COPY.app.executionTimelineWaiting}
+            Waiting for setup tasks…
           </Text>
         )}
       </div>

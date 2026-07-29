@@ -10,9 +10,7 @@ import CanvasPanel from "../components/workspace/CanvasPanel";
 import ComboInspector from "../components/workspace/ComboInspector";
 import ControlsPanel from "../components/workspace/ControlsPanel";
 import DemoSetupPanel from "../components/workspace/DemoSetupPanel";
-import ResizableWorkspace, {
-  type WorkspacePhase,
-} from "../components/workspace/ResizableWorkspace";
+import ResizableWorkspace from "../components/workspace/ResizableWorkspace";
 
 export default function WorkspacePage() {
   const mobile = useMediaQuery("(max-width: 70em)");
@@ -34,40 +32,12 @@ export default function WorkspacePage() {
   const [prompt, setPrompt] = useState("");
   const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<string | null>("inputs");
-  const [inspectOpen, setInspectOpen] = useState(false);
   const [escalateOpen, { open: openEscalate, close: closeEscalate }] =
     useDisclosure(false);
 
-  const runStatus = workspace.run?.run.status;
-  const isActive =
-    runStatus === "ingesting" ||
-    runStatus === "running" ||
-    runStatus === "aggregating";
-  const isComplete =
-    runStatus === "complete" ||
-    runStatus === "budget_exceeded" ||
-    runStatus === "failed" ||
-    runStatus === "canceled";
-
-  const phase: WorkspacePhase = !workspace.runId
-    ? "configure"
-    : isActive
-      ? "running"
-      : "results";
-
-  const showInspector =
-    phase === "results" &&
-    inspectOpen &&
-    Boolean(workspace.selectedTrialId);
-
   useEffect(() => {
-    if (workspace.runId) setMobileTab(phase === "running" ? "arena" : "arena");
-  }, [workspace.runId, phase]);
-
-  useEffect(() => {
-    if (phase === "configure") setInspectOpen(false);
-    if (phase === "running") setInspectOpen(false);
-  }, [phase]);
+    if (workspace.runId) setMobileTab("arena");
+  }, [workspace.runId]);
 
   useEffect(() => {
     if (samples.length && !selectedSampleId) {
@@ -96,8 +66,6 @@ export default function WorkspacePage() {
 
   function handleTrialSelect(trialId: string) {
     workspace.setSelectedTrialId(trialId);
-    if (phase !== "results") return;
-    setInspectOpen(true);
     if (mobile) setMobileTab("details");
   }
 
@@ -113,6 +81,7 @@ export default function WorkspacePage() {
         method: "POST",
         body: JSON.stringify({
           text: prompt.trim(),
+          // Custom questions have no trusted reference: correctness stays unscored.
           referenceAnswer: selectedSample?.referenceAnswer ?? null,
         }),
       });
@@ -193,35 +162,17 @@ export default function WorkspacePage() {
   }
 
   const controls = (
-    <Stack gap="md">
-      {(phase === "running" || phase === "results") && (
-        <Alert color="gray" variant="light">
-          <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-            <Text size="sm">
-              {phase === "running"
-                ? COPY.app.configureWhileRunning
-                : COPY.app.backToConfigure}
-            </Text>
-            {phase === "results" && (
-              <Button size="compact-sm" variant="light" onClick={workspace.reset}>
-                {COPY.app.backToConfigure}
-              </Button>
-            )}
-          </Group>
-        </Alert>
-      )}
-      <ControlsPanel
-        samples={samples}
-        prompt={prompt}
-        onPromptChange={setPrompt}
-        selectedSampleId={selectedSampleId}
-        onSampleChange={handleSampleChange}
-        matrix={matrix}
-        onRun={() => void handleRun()}
-        running={workspace.running || workspace.start.isPending || phase === "running"}
-        canRun={matrix.canRun && Boolean(prompt.trim()) && phase === "configure"}
-      />
-    </Stack>
+    <ControlsPanel
+      samples={samples}
+      prompt={prompt}
+      onPromptChange={setPrompt}
+      selectedSampleId={selectedSampleId}
+      onSampleChange={handleSampleChange}
+      matrix={matrix}
+      onRun={() => void handleRun()}
+      running={workspace.running || workspace.start.isPending}
+      canRun={matrix.canRun && Boolean(prompt.trim())}
+    />
   );
 
   const canvas = (
@@ -265,52 +216,18 @@ export default function WorkspacePage() {
   );
 
   const inspector = (
-    <Stack gap="sm">
-      {showInspector && (
-        <Button
-          type="button"
-          variant="subtle"
-          size="compact-sm"
-          w="fit-content"
-          onClick={() => setInspectOpen(false)}
-        >
-          {COPY.app.closeEvidence}
-        </Button>
-      )}
-      <ComboInspector trial={workspace.trial} loading={workspace.trialLoading} />
-    </Stack>
+    <ComboInspector trial={workspace.trial} loading={workspace.trialLoading} />
   );
 
   if (mobile) {
-    const tabs =
-      phase === "configure"
-        ? [{ value: "inputs", label: COPY.app.phaseConfigure }]
-        : phase === "running"
-          ? [
-              { value: "arena", label: COPY.app.phaseRunning },
-              { value: "inputs", label: COPY.app.phaseConfigure },
-            ]
-          : [
-              { value: "arena", label: COPY.app.phaseResults },
-              { value: "details", label: COPY.app.zones.detail },
-              { value: "inputs", label: COPY.app.phaseConfigure },
-            ];
-
     return (
       <div className="workspace-page">
         {escalateModal}
-        <Tabs
-          value={mobileTab}
-          onChange={setMobileTab}
-          defaultValue={phase === "configure" ? "inputs" : "arena"}
-          className="mobile-panes"
-        >
+        <Tabs value={mobileTab} onChange={setMobileTab} defaultValue="inputs" className="mobile-panes">
           <Tabs.List grow>
-            {tabs.map((tab) => (
-              <Tabs.Tab key={tab.value} value={tab.value}>
-                {tab.label}
-              </Tabs.Tab>
-            ))}
+            <Tabs.Tab value="inputs">{COPY.app.zones.inputs}</Tabs.Tab>
+            <Tabs.Tab value="arena">{COPY.app.zones.run}</Tabs.Tab>
+            <Tabs.Tab value="details">{COPY.app.zones.detail}</Tabs.Tab>
           </Tabs.List>
           <Tabs.Panel value="inputs" className="mobile-pane">
             {controls}
@@ -329,23 +246,7 @@ export default function WorkspacePage() {
   return (
     <div className="workspace-page">
       {escalateModal}
-      {phase === "configure" ? (
-        <ResizableWorkspace
-          phase="configure"
-          controls={controls}
-          canvas={<div />}
-          inspector={<div />}
-          showInspector={false}
-        />
-      ) : (
-        <ResizableWorkspace
-          phase={phase}
-          controls={<div />}
-          canvas={canvas}
-          inspector={inspector}
-          showInspector={showInspector}
-        />
-      )}
+      <ResizableWorkspace controls={controls} canvas={canvas} inspector={inspector} />
     </div>
   );
 }

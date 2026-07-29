@@ -1,17 +1,10 @@
 export function formatReceipt(r: {
-  latencyMs?: number | null;
-  costUsd?: number | null;
+  latencyMs: number;
+  costUsd: number;
   costUnknown?: boolean;
   provider?: string;
 }): string {
-  const latency =
-    r.latencyMs == null || Number.isNaN(Number(r.latencyMs))
-      ? "—"
-      : `${r.latencyMs}ms`;
-  const cost =
-    r.costUnknown || r.costUsd == null || Number.isNaN(Number(r.costUsd))
-      ? "n/a"
-      : `$${Number(r.costUsd).toFixed(4)}`;
+  const cost = r.costUnknown ? "n/a" : `$${r.costUsd.toFixed(4)}`;
   const provider = r.provider ? ` via ${r.provider}` : "";
-  return `${latency}, ${cost}${provider}`;
+  return `${r.latencyMs}ms, ${cost}${provider}`;
 }

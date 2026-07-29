@@ -1,172 +1,147 @@
-import { Button, Group, Stack, Text } from "@mantine/core";
-import { COPY } from "../../lib/copy";
+import { Group, RingProgress, SimpleGrid, Stack, Text } from "@mantine/core";
+import { COPY, runStatusLabel } from "../../lib/copy";
 import {
-  describeSetupProgress,
-  rankSetups,
-  setupStageProgress,
-} from "../../lib/setup-ranking";
+  formatPoints,
+  scorePercent,
+  scoreTone,
+  summarizeTrialScores,
+} from "../../lib/score-display";
 import type { RunPayload } from "../../hooks/types";
 
 function elapsedMs(run: RunPayload["run"] | undefined): number {
   if (!run?.startedAt && !run?.createdAt) return 0;
   const start = Date.parse(run.startedAt ?? run.createdAt);
   const end =
-    run.status === "complete" ||
-    run.status === "failed" ||
-    run.status === "canceled" ||
-    run.status === "budget_exceeded"
+    run.status === "complete" || run.status === "failed" || run.status === "canceled"
       ? Date.parse(run.finishedAt ?? run.createdAt)
       : Date.now();
   return Math.max(0, end - start);
 }
 
-type Props = {
-  run: RunPayload | undefined;
-  isActive: boolean;
-  onCancel?: () => void;
-  canceling?: boolean;
-};
-
-/** Compact run header: progress while live, top setup when finished. */
-export default function ComboRunSummary({
-  run,
-  isActive,
-  onCancel,
-  canceling,
-}: Props) {
+export default function ComboRunSummary({ run }: { run: RunPayload | undefined }) {
   if (!run) return null;
 
-  const ranking = rankSetups({
-    combos: run.comboResults ?? [],
-    grid: run.grid ?? [],
-    runStatus: run.run.status,
-  });
-  const setupCount = run.comboResults?.length ?? 0;
-  const readyCount = (run.grid ?? []).filter(
-    (cell) => cell.status === "complete" || Boolean(cell.answer?.trim())
-  ).length;
-  const elapsed = COPY.app.elapsed(elapsedMs(run.run) / 1000);
-  const spend = COPY.app.spendLimit(
-    Number(run.run.totalCostUsd).toFixed(2),
-    Number(run.run.budgetUsd).toFixed(2)
-  );
+  const scores = summarizeTrialScores(run.grid);
+  const best = run.comboResults.reduce<number | null>((max, combo) => {
+    const score = scorePercent(combo.avgScore);
+    if (score == null) return max;
+    return max == null ? score : Math.max(max, score);
+  }, null);
+  const status = run.run.status;
+  const statusColor =
+    status === "complete"
+      ? "green"
+      : status === "failed"
+        ? "red"
+        : status === "running" || status === "ingesting"
+          ? "indigo"
+          : "gray";
+  const roundedOverall =
+    scores.overallPercent == null ? null : Math.round(scores.overallPercent);
+  const tone = scoreTone(roundedOverall);
 
-  if (isActive) {
-    const byCombo = new Map((run.grid ?? []).map((cell) => [cell.comboId, cell]));
-    const focus = (run.comboResults ?? [])
-      .map((combo, index) => {
-        const cell = byCombo.get(combo.comboId);
-        const progress = setupStageProgress({
-          status: cell?.status ?? "pending",
-          hasRerank: Boolean(combo.rerankModel),
-          answer: cell?.answer ?? null,
-          score: cell?.overallScore ?? null,
-        });
-        return describeSetupProgress({
-          setupLabel: `Setup ${index + 1}`,
-          progress,
-        });
-      })
-      .slice(0, 3)
-      .join(". ");
-
-    return (
-      <section className="run-summary run-summary--live pg-arena-card" aria-label="Run progress">
-        <Stack gap="sm">
-          <Group justify="space-between" align="flex-start" gap="sm">
-            <Stack gap={4}>
-              <Text className="pg-section-title">{COPY.app.phaseRunning}</Text>
-              <Text fw={650} size="lg">
-                {COPY.app.runningSetupsHeading(setupCount)}
-              </Text>
-            </Stack>
-            {onCancel && (
-              <Button
-                type="button"
-                color="red"
-                variant="subtle"
-                size="compact-sm"
-                onClick={onCancel}
-                loading={canceling}
-              >
-                {COPY.app.cancel}
-              </Button>
-            )}
-          </Group>
-          {focus && (
-            <Text size="sm" className="setup-progress__focus">
-              {focus}.
+  return (
+    <section className="run-summary pg-arena-card" aria-label="Run evaluation summary">
+      <div className={`run-score-hero score-tone--${tone}`}>
+        <Stack gap={2}>
+          <Text className="run-score-label">Overall evaluation</Text>
+          <Group gap={6} align="baseline" wrap="nowrap">
+            <Text component="span" className="run-score-value">
+              {roundedOverall ?? "—"}
             </Text>
-          )}
-          <Group gap="md" wrap="wrap">
-            <Text size="sm">{COPY.app.answersReady(readyCount, setupCount)}</Text>
-            <Text size="sm" c="dimmed">
-              {elapsed}
-            </Text>
-            <Text size="sm" c="dimmed">
-              {spend}
+            <Text component="span" className="run-score-scale">
+              /100
             </Text>
           </Group>
         </Stack>
-      </section>
-    );
-  }
+        <Stack gap={3} align="flex-end" className="run-score-proof">
+          <Text fw={700} size="sm">
+            {scores.scoredCount
+              ? `${formatPoints(scores.earnedPoints)} / ${formatPoints(scores.possiblePoints)} points`
+              : COPY.app.awaitingScores}
+          </Text>
+          <Text size="xs" c="dimmed">
+            {COPY.app.setupsScored(scores.scoredCount, scores.totalCount)}
+          </Text>
+        </Stack>
+      </div>
 
-  const top = ranking.top;
-  const title = !ranking.hasScores
-    ? COPY.app.noWinnerYet
-    : ranking.isFinal
-      ? `${COPY.app.topSetup}: ${top?.setupLabel ?? ""}`
-      : `${COPY.app.leadingSoFar}: ${top?.setupLabel ?? ""}`;
-
-  return (
-    <section className="run-summary run-summary--done pg-arena-card" aria-label="Comparison result">
-      <Stack gap="sm">
-        <Text className="pg-section-title">{COPY.app.phaseResults}</Text>
-        <Text fw={650} size="lg">
-          {title}
-        </Text>
-        {ranking.primaryReason && (
-          <Text size="sm">
-            <Text span fw={600}>
-              {COPY.app.whyItLeads}:{" "}
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing={0} className="run-summary-details">
+        <Group gap="sm" className="run-summary-cell">
+          <RingProgress
+            size={36}
+            thickness={4}
+            sections={[{ value: 100, color: statusColor }]}
+            label={
+              <Text ta="center" size="xs">
+                {status === "complete" ? "✓" : status === "running" || status === "ingesting" ? "…" : "·"}
+              </Text>
+            }
+          />
+          <Stack gap={1}>
+            <Text size="sm" fw={600}>
+              {runStatusLabel(status)}
             </Text>
-            {ranking.primaryReason}
-          </Text>
-        )}
-        {(ranking.costDeltaUsd != null || ranking.latencyDeltaMs != null) && (
-          <Group gap="md" wrap="wrap">
-            {ranking.costDeltaUsd != null && (
-              <Text size="sm" c="dimmed">
-                {COPY.app.costVsNext(
-                  `${ranking.costDeltaUsd >= 0 ? "" : "-"}$${Math.abs(ranking.costDeltaUsd).toFixed(4)}`
-                )}
-              </Text>
-            )}
-            {ranking.latencyDeltaMs != null && (
-              <Text size="sm" c="dimmed">
-                {COPY.app.latencyVsNext(
-                  `${ranking.latencyDeltaMs >= 0 ? "" : "-"}${Math.abs(Math.round(ranking.latencyDeltaMs))}ms`
-                )}
-              </Text>
-            )}
-          </Group>
-        )}
-        <Text size="xs" c="dimmed">
-          {COPY.app.rankingBasis}
-        </Text>
-        <Group gap="md" wrap="wrap">
-          <Text size="sm" c="dimmed">
-            {COPY.app.answersReady(readyCount, setupCount)}
-          </Text>
-          <Text size="sm" c="dimmed">
-            {elapsed}
-          </Text>
-          <Text size="sm" c="dimmed">
-            {spend}
-          </Text>
+            <Text size="xs" c="dimmed">
+              {COPY.app.elapsed(elapsedMs(run.run) / 1000)}
+            </Text>
+          </Stack>
         </Group>
-      </Stack>
+
+        <Group gap="sm" className="run-summary-cell">
+          <RingProgress
+            size={36}
+            thickness={4}
+            sections={[
+              {
+                value: scores.totalCount ? (scores.completeCount / scores.totalCount) * 100 : 0,
+                color: scores.failedCount ? "red" : "green",
+              },
+            ]}
+            label={
+              <Text ta="center" size="xs">
+                {scores.completeCount}/{scores.totalCount}
+              </Text>
+            }
+          />
+          <Stack gap={1}>
+            <Text size="sm" fw={600}>
+              {COPY.app.progress(scores.completeCount, scores.totalCount)}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {scores.failedCount
+                ? `${scores.failedCount} failed`
+                : COPY.app.setupCount(scores.totalCount)}
+            </Text>
+          </Stack>
+        </Group>
+
+        <Stack gap={2} className="run-summary-cell" justify="center">
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+            Spend
+          </Text>
+          <Text size="sm" fw={600}>
+            {COPY.app.spend(
+              Number(run.run.totalCostUsd).toFixed(2),
+              Number(run.run.budgetUsd).toFixed(2)
+            )}
+          </Text>
+        </Stack>
+
+        <Stack gap={2} className="run-summary-cell" justify="center">
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+            {COPY.app.bestScore}
+          </Text>
+          <Group gap={3} align="baseline">
+            <Text size="lg" fw={750}>
+              {best ?? "—"}
+            </Text>
+            <Text size="xs" c="dimmed">
+              /100
+            </Text>
+          </Group>
+        </Stack>
+      </SimpleGrid>
     </section>
   );
 }

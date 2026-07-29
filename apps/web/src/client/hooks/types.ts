@@ -86,18 +86,5 @@ export type TrialDetail = {
   };
   question: { text: string; referenceAnswer: string | null };
   combo: { embeddingModel: string; rerankModel: string | null; genModel: string };
-  corpus: {
-    id: string;
-    name: string;
-    documentCount: number;
-  };
-  chunks: {
-    id: string;
-    idx: number;
-    content: string;
-    documentId: string;
-    documentTitle: string;
-    sourceUri: string | null;
-    corpusName: string;
-  }[];
+  chunks: { id: string; idx: number; content: string }[];
 };

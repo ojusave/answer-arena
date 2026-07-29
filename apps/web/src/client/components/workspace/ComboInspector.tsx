@@ -5,7 +5,6 @@ import { COPY, TEST_STATUS_LABEL } from "../../lib/copy";
 import { scorePercent, scoreTone } from "../../lib/score-display";
 import { comboLabel } from "@ragtime/core";
 import type { TrialDetail } from "../../hooks/types";
-import type { EvidenceChunk } from "../../lib/evidence-display";
 
 export default function ComboInspector({
   trial,
@@ -15,7 +14,7 @@ export default function ComboInspector({
   loading: boolean;
 }) {
   const chunkMap = useMemo(() => {
-    const m = new Map<string, EvidenceChunk>();
+    const m = new Map<string, { id: string; content: string; idx?: number }>();
     for (const c of trial?.chunks ?? []) {
       m.set(c.id, c);
     }
@@ -48,15 +47,10 @@ export default function ComboInspector({
   const score = scorePercent(trial.trial.overallScore);
   const tone = scoreTone(score);
   const statusLabel = TEST_STATUS_LABEL[trial.trial.status] ?? trial.trial.status;
-  const corpusName = trial.corpus?.name ?? trial.chunks[0]?.corpusName ?? "Document library";
-  const documentCount = trial.corpus?.documentCount ?? 0;
 
   return (
     <Stack gap="md" className="combo-inspector">
-      <section
-        className={`inspector-score-card score-tone--${tone}`}
-        aria-label={COPY.app.inspectorScoreAria}
-      >
+      <section className={`inspector-score-card score-tone--${tone}`} aria-label={COPY.app.inspectorScoreAria}>
         <Group justify="space-between" align="flex-start" wrap="nowrap">
           <Stack gap={3}>
             <Tooltip label={COPY.app.judgeScoreTooltip} multiline w={240} withArrow>
@@ -80,23 +74,13 @@ export default function ComboInspector({
       </section>
 
       <Stack gap={4}>
-        <Text fw={600} size="sm">
-          {label}
-        </Text>
-        <Text size="xs" c="dimmed" lineClamp={3}>
-          {trial.question.text}
-        </Text>
+        <Text fw={600} size="sm">{label}</Text>
+        <Text size="xs" c="dimmed" lineClamp={4}>{trial.question.text}</Text>
       </Stack>
-
       <TrialStagesPanel
         stages={trial.trial.stages}
         answer={trial.trial.answer}
         chunks={chunkMap}
-        questionText={trial.question.text}
-        corpusName={corpusName}
-        documentCount={documentCount}
-        combo={trial.combo}
-        resetKey={`${trial.question.text}:${trial.combo.genModel}:${trial.trial.status}`}
       />
     </Stack>
   );

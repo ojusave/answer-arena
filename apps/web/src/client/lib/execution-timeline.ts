@@ -1,12 +1,7 @@
-import { stageLabel, stageProgressPhrase } from "./copy.js";
+import { stageLabel } from "./copy.js";
 
-/** Trial id → beginner-facing setup name (and optional model detail). */
-export type SetupLabel = {
-  title: string;
-  detail?: string;
-};
-
-export type SetupLabels = ReadonlyMap<string, SetupLabel | string>;
+/** Trial id to the shortest setup label that is unique in this run. */
+export type SetupLabels = ReadonlyMap<string, string>;
 
 export type TimelineEvent = {
   id: number;
@@ -29,7 +24,6 @@ export type TimelineSpan = {
 export type TimelineRow = {
   trialId: string;
   label: string;
-  detail?: string;
   attempt: number;
   retries: number;
   status: "pending" | "running" | "complete" | "failed";
@@ -67,30 +61,22 @@ function receiptLatency(event: TimelineEvent): number {
   return Number.isFinite(value) && value > 0 ? value : 0;
 }
 
-function normalizeSetupLabel(value: SetupLabel | string): SetupLabel {
-  return typeof value === "string" ? { title: value } : value;
-}
-
-function uniqueRowLabels(setups: SetupLabels): Map<string, SetupLabel> {
+function uniqueRowLabels(setups: SetupLabels): Map<string, string> {
   const counts = new Map<string, number>();
-  const labels = new Map<string, SetupLabel>();
-  for (const [trialId, raw] of setups) {
-    const label = normalizeSetupLabel(raw);
-    const next = (counts.get(label.title) ?? 0) + 1;
-    counts.set(label.title, next);
-    labels.set(trialId, {
-      title: next === 1 ? label.title : `${label.title} · question ${next}`,
-      detail: label.detail,
-    });
+  const labels = new Map<string, string>();
+  for (const [trialId, label] of setups) {
+    const next = (counts.get(label) ?? 0) + 1;
+    counts.set(label, next);
+    labels.set(trialId, next === 1 ? label : `${label} · question ${next}`);
   }
   return labels;
 }
 
 const ACTIVE_PHASE_LABEL: Record<string, string> = {
   draft: "Queued",
-  ingesting: "Indexing documents",
-  running: "Running setups",
-  aggregating: "Finishing up",
+  ingesting: "Prepare corpus",
+  running: "Run setups",
+  aggregating: "Aggregate",
 };
 
 function buildSummarySpans(
@@ -187,7 +173,7 @@ export function buildExecutionTimeline(args: {
   );
 
   const rows: TimelineRow[] = [];
-  for (const [trialId, setup] of labels) {
+  for (const [trialId, label] of labels) {
     const trialEvents = byTrial.get(trialId) ?? [];
     const spans: TimelineSpan[] = [];
     const open = new Map<string, OpenSpan>();
@@ -280,8 +266,7 @@ export function buildExecutionTimeline(args: {
     );
     rows.push({
       trialId,
-      label: setup.title,
-      detail: setup.detail,
+      label,
       attempt,
       retries,
       status: hasRunning
@@ -327,42 +312,4 @@ export function formatDuration(ms: number): string {
   if (ms < 1_000) return `${Math.round(ms)}ms`;
   if (ms < 60_000) return `${(ms / 1_000).toFixed(ms < 10_000 ? 1 : 0)}s`;
   return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1_000)}s`;
-}
-
-/** One plain-English line for beginners watching a live (or finished) run. */
-export function describeTimelineFocus(timeline: ExecutionTimeline): string {
-  const activePhase = [...timeline.summarySpans]
-    .reverse()
-    .find((span) => span.status === "running");
-  if (activePhase?.label === "Indexing documents") {
-    return "Indexing the document library so every setup searches the same corpus.";
-  }
-  if (activePhase?.label === "Finishing up") {
-    return "Wrapping up scores and totals.";
-  }
-
-  const running = timeline.rows
-    .map((row) => {
-      const span = [...row.spans].reverse().find((item) => item.status === "running");
-      return span ? `${row.label} is ${stageProgressPhrase(span.stage)}` : null;
-    })
-    .filter((line): line is string => Boolean(line));
-
-  if (running.length > 0) {
-    return running.slice(0, 3).join(" · ");
-  }
-
-  if (timeline.rows.every((row) => row.status === "complete") && timeline.rows.length > 0) {
-    return "Every setup finished. Compare the answers below, or click a row to inspect passages.";
-  }
-
-  if (timeline.rows.some((row) => row.status === "failed")) {
-    return "At least one setup failed. Red bars mark the step that broke; retries appear beside them.";
-  }
-
-  if (timeline.rows.length === 0) {
-    return "Waiting for setup tasks to start…";
-  }
-
-  return "Bars that line up mean setups are working in parallel.";
 }
