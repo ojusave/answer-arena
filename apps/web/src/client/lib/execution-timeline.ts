@@ -73,7 +73,7 @@ function uniqueRowLabels(setups: SetupLabels): Map<string, string> {
 }
 
 const ACTIVE_PHASE_LABEL: Record<string, string> = {
-  draft: "Queued",
+  draft: "Starting",
   ingesting: "Prepare corpus",
   running: "Run setups",
   aggregating: "Aggregate",
