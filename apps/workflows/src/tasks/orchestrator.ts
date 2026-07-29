@@ -26,6 +26,24 @@ const TRIAL_POLL_INTERVAL_MS = 2_000;
 const TRIAL_DRAIN_TIMEOUT_MS =
   TRIAL_LEASE_MS * (MAX_TRIAL_ATTEMPTS + 1) + 60_000;
 
+/** How much of the comparison survived, which decides whether a run has value. */
+async function countCompleteTrials(
+  runId: string,
+  questionIds: string[]
+): Promise<number> {
+  const rows = await getDb()
+    .select({ id: trials.id })
+    .from(trials)
+    .where(
+      and(
+        eq(trials.runId, runId),
+        inArray(trials.questionId, questionIds),
+        eq(trials.status, "complete")
+      )
+    );
+  return rows.length;
+}
+
 export const aggregateRun = task(
   {
     name: "aggregate_run",
@@ -274,10 +292,23 @@ export const runBakeoff = task(
             (trial) => trial.status === "failed"
           ).length;
           const stuck = incomplete.length - failed;
-          return await failPhase(
-            "running",
-            `Bake-off incomplete: ${failed} failed, ${stuck} pending/running trials`
-          );
+          const scored = await countCompleteTrials(runId, snapshotQuestionIds);
+          // A bake-off compares setups, and that comparison still holds when
+          // some trials could not finish. Report the run on what it scored and
+          // let the grid show the gaps, rather than discarding every result
+          // because one model would not answer.
+          if (scored === 0) {
+            return await failPhase(
+              "running",
+              `Bake-off incomplete: ${failed} failed, ${stuck} pending/running trials`
+            );
+          }
+          await appendRunEvent(db, runId, "run.partial", {
+            scored,
+            failed,
+            stuck,
+          });
+          break;
         }
 
         const runnable = incomplete.filter(

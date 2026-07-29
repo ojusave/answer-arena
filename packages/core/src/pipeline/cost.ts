@@ -3,7 +3,6 @@ import type {
   CostOperationKind,
   WithReceipt,
 } from "../ports.js";
-import { CostOperationError } from "../errors.js";
 
 export async function runCostedOperation<T extends WithReceipt<unknown>>(args: {
   controller?: CostController;
@@ -22,24 +21,12 @@ export async function runCostedOperation<T extends WithReceipt<unknown>>(args: {
   try {
     result = await args.call(reservation.maxCostUsd);
   } catch (error) {
-    const definitelyUnbilled =
-      typeof error === "object" &&
-      error !== null &&
-      "billingAmbiguous" in error &&
-      error.billingAmbiguous === false;
-    if (definitelyUnbilled) {
-      await args.controller.release(args.operationKey);
-    } else {
-      await args.controller.settle(
-        args.operationKey,
-        reservation.maxCostUsd
-      );
-      throw new CostOperationError(
-        error instanceof Error ? error.message : "Paid provider call failed",
-        false,
-        error
-      );
-    }
+    // A failed call leaves nothing to replay whether or not it was billed, so
+    // the reservation goes back and the caller is free to retry. Charging an
+    // ambiguous call the full per-call ceiling instead cost far more than the
+    // unrecorded spend it hedged against: four lost responses billed $2.00
+    // against real spend of under three cents, and exhausted the run's budget.
+    await args.controller.release(args.operationKey);
     throw error;
   }
 

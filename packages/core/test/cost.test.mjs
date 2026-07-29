@@ -111,7 +111,7 @@ test("definitively unbilled provider failures release the reservation for retry"
   ]);
 });
 
-test("billing-ambiguous failures conservatively settle the reservation", async () => {
+test("billing-ambiguous failures release the reservation so the caller can retry", async () => {
   const events = [];
   const controller = {
     async reserve() {
@@ -141,11 +141,10 @@ test("billing-ambiguous failures conservatively settle the reservation", async (
       }),
     /connection reset/
   );
-  assert.deepEqual(events, [
-    "reserve",
-    "call",
-    ["settle", "trial:1:generation", 0.25, undefined],
-  ]);
+  // Charging the per-call ceiling for a call that returned nothing exhausted
+  // run budgets on transient upstream hiccups, so the reservation goes back and
+  // the original error propagates for the trial to retry.
+  assert.deepEqual(events, ["reserve", "call", "release"]);
 });
 
 test("unknown provider costs settle conservatively and preserve the result", async () => {

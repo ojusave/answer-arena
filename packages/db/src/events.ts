@@ -9,7 +9,9 @@ export type RunEventType =
   | "trial.stage"
   | "trial.retry"
   | "chaos.injected"
-  | "budget.tripped";
+  | "budget.tripped"
+  /** The run finished with some trials unscored; the grid shows which. */
+  | "run.partial";
 
 /** Fire-and-forget event append. Never throws to caller. */
 export function emitEvent(
