@@ -1,5 +1,5 @@
-import { Alert, Button, Group, Loader, Stack, Text } from "@mantine/core";
-import { useMemo } from "react";
+import { Alert, Button, Collapse, Group, Loader, Stack, Text } from "@mantine/core";
+import { useMemo, useState } from "react";
 import { COPY, runStatusLabel } from "../../lib/copy";
 import { comboShortLabels } from "../../lib/combo-display";
 import type { RunPayload } from "../../hooks/types";
@@ -39,6 +39,7 @@ export default function CanvasPanel({
   onEscalate,
   escalating,
 }: Props) {
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const status = run?.run.status;
   const isActive = status === "ingesting" || status === "running" || status === "aggregating";
   const isComplete = status === "complete" || status === "budget_exceeded";
@@ -78,7 +79,17 @@ export default function CanvasPanel({
 
       {run && (
         <>
-          <ComboRunSummary run={run} />
+          {isActive && runId ? (
+            <RunTimeline
+              runId={runId}
+              runStatus={run.run.status}
+              setups={setupLabels}
+              startedAt={run.run.startedAt}
+              finishedAt={run.run.finishedAt}
+            />
+          ) : (
+            <ComboRunSummary run={run} />
+          )}
 
           {isActive && (
             <Button
@@ -121,13 +132,28 @@ export default function CanvasPanel({
           )}
 
           {!isActive && runId && (
-            <RunTimeline
-              runId={runId}
-              runStatus={run.run.status}
-              setups={setupLabels}
-              startedAt={run.run.startedAt}
-              finishedAt={run.run.finishedAt}
-            />
+            <Stack gap="xs" align="flex-start">
+              <Button
+                type="button"
+                variant="subtle"
+                size="compact-sm"
+                onClick={() => setTimelineOpen((open) => !open)}
+                aria-expanded={timelineOpen}
+              >
+                {timelineOpen
+                  ? COPY.app.hideExecutionTimeline
+                  : COPY.app.showExecutionTimeline}
+              </Button>
+              <Collapse in={timelineOpen} keepMounted={false} w="100%">
+                <RunTimeline
+                  runId={runId}
+                  runStatus={run.run.status}
+                  setups={setupLabels}
+                  startedAt={run.run.startedAt}
+                  finishedAt={run.run.finishedAt}
+                />
+              </Collapse>
+            </Stack>
           )}
         </>
       )}
