@@ -41,6 +41,27 @@ export function useWorkspaceRun() {
       ACTIVE.has(q.state.data?.run.status ?? "") ? 2000 : false,
   });
 
+  // A reload loses the run id, but the run keeps going and still counts against
+  // this session's limit. Reattach once on load so it stays watchable and
+  // cancelable instead of blocking the next run with nothing on screen.
+  const [reattach, setReattach] = useState(true);
+
+  const activeRunQuery = useQuery({
+    queryKey: ["workspace-active-run"],
+    queryFn: () => api<{ runId: string; status: string } | null>("/api/runs/active"),
+    enabled: reattach && runId === null,
+    // Whether a run is in flight changes constantly, and a cached "none" here
+    // would leave the workspace idle while the session still holds a slot.
+    staleTime: 0,
+  });
+
+  useEffect(() => {
+    const adopted = activeRunQuery.data?.runId;
+    if (!reattach || !adopted) return;
+    setRunId(adopted);
+    setReattach(false);
+  }, [activeRunQuery.data?.runId, reattach]);
+
   const trialQuery = useQuery({
     queryKey: ["workspace-trial", selectedTrialId],
     queryFn: () => api<TrialDetail>(`/api/trials/${selectedTrialId}`),
@@ -90,14 +111,22 @@ export function useWorkspaceRun() {
     onSuccess: (data) => {
       setRunId(data.runId);
       setSelectedTrialId(null);
+      setReattach(false);
       notifySuccess(COPY.notify.comparisonStarted);
       qc.invalidateQueries({ queryKey: ["workspace-run", data.runId] });
     },
-    onError: (e) =>
+    onError: (e) => {
+      // The session already has a run this tab lost track of. Pull it back so
+      // the message about cancelling it refers to something on screen.
+      if (e instanceof Error && (e as Error & { code?: string }).code === "session_run_limit") {
+        setReattach(true);
+        qc.invalidateQueries({ queryKey: ["workspace-active-run"] });
+      }
       notifyError(
         "Could not start comparison",
         e instanceof Error ? friendlyError(e.message) : undefined
-      ),
+      );
+    },
   });
 
   const cancel = useMutation({
@@ -116,6 +145,7 @@ export function useWorkspaceRun() {
   const reset = useCallback(() => {
     setRunId(null);
     setSelectedTrialId(null);
+    setReattach(false);
   }, []);
 
   const running = Boolean(runId && ACTIVE.has(runQuery.data?.run.status ?? ""));

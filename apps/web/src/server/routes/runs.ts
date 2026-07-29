@@ -10,6 +10,7 @@ import {
   RunAdmissionError,
   checkRunAdmission,
   STRANDED_DRAFT_SECONDS,
+  ABANDONED_RUN_SECONDS,
 } from "@ragtime/core";
 import { createWorkflowDispatcher } from "@ragtime/composition";
 import {
@@ -23,7 +24,8 @@ import {
   transitionRun,
   countActiveRuns,
   lockRunAdmission,
-  reapStrandedDraftRuns,
+  reapAbandonedRuns,
+  getActiveRunForSession,
 } from "@ragtime/db";
 import { getOwnedRun } from "../lib/ownership.js";
 import { asSessionRequest } from "../types.js";
@@ -88,7 +90,10 @@ export function registerRunRoutes(app: FastifyInstance): void {
         // Decide admission under a lock so two simultaneous requests cannot
         // both read a stale count and both start a run.
         await lockRunAdmission(tx);
-        await reapStrandedDraftRuns(tx, STRANDED_DRAFT_SECONDS);
+        await reapAbandonedRuns(tx, {
+          strandedDraftSeconds: STRANDED_DRAFT_SECONDS,
+          abandonedRunSeconds: ABANDONED_RUN_SECONDS,
+        });
         const rejection = checkRunAdmission(
           await countActiveRuns(tx, sessionId),
           {
@@ -186,6 +191,12 @@ export function registerRunRoutes(app: FastifyInstance): void {
     }
 
     return { data: { runId: run.id } };
+  });
+
+  // Static segment, so this is matched ahead of /api/runs/:id.
+  app.get("/api/runs/active", async (req) => {
+    const { sessionId } = asSessionRequest(req);
+    return { data: await getActiveRunForSession(db, sessionId) };
   });
 
   app.get<{ Params: { id: string } }>("/api/runs/:id", async (req, reply) => {

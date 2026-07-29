@@ -19,21 +19,50 @@ export async function lockRunAdmission(db: Executor): Promise<void> {
 }
 
 /**
- * Fails runs whose row was committed but whose workflow task was never
- * dispatched, so one crashed request cannot hold a session's slot forever.
+ * Releases slots held by runs nothing will finish: a row committed whose
+ * workflow task was never dispatched, and a run whose workflow disappeared
+ * mid-flight. Without this, a crash permanently consumes deployment capacity.
  */
-export async function reapStrandedDraftRuns(
+export async function reapAbandonedRuns(
   db: Executor,
-  staleAfterSeconds: number
+  limits: { strandedDraftSeconds: number; abandonedRunSeconds: number }
 ): Promise<void> {
   await db.execute(sql`
     UPDATE runs
     SET status = 'failed',
-        error = 'Run never started: the workflow task was not dispatched.',
+        error = CASE
+          WHEN status = 'draft'
+            THEN 'Run never started: the workflow task was not dispatched.'
+          ELSE 'Run was abandoned: the workflow stopped reporting progress.'
+        END,
         finished_at = now()
-    WHERE status = 'draft'
-      AND created_at < now() - (${staleAfterSeconds} * INTERVAL '1 second')
+    WHERE (
+        status = 'draft'
+        AND created_at < now() - (${limits.strandedDraftSeconds} * INTERVAL '1 second')
+      )
+      OR (
+        status IN ('ingesting', 'running', 'aggregating')
+        AND COALESCE(started_at, created_at)
+            < now() - (${limits.abandonedRunSeconds} * INTERVAL '1 second')
+      )
   `);
+}
+
+/** The run a session should reattach to after a reload, if it still has one. */
+export async function getActiveRunForSession(
+  db: Executor,
+  sessionId: string
+): Promise<{ runId: string; status: string } | null> {
+  const rows = await db.execute<{ id: string; status: string }>(sql`
+    SELECT id, status
+    FROM runs
+    WHERE session_id = ${sessionId}
+      AND status IN ('draft', 'ingesting', 'running', 'aggregating')
+    ORDER BY created_at DESC
+    LIMIT 1
+  `);
+  const row = rows[0];
+  return row ? { runId: row.id, status: row.status } : null;
 }
 
 /**
