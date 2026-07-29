@@ -217,6 +217,7 @@ export const COPY = {
     setupsScored: (scored: number, total: number) =>
       `${scored} of ${total} setup${total === 1 ? "" : "s"} scored`,
     awaitingScores: "Waiting for scored setups",
+    awaitingBestScore: "Not scored yet",
     arenaHint: "Select a setup to inspect its evidence.",
     judgeScore: "Judge score",
     judgeScoreTooltip:

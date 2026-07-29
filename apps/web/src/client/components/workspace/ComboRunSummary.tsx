@@ -22,6 +22,7 @@ export default function ComboRunSummary({ run }: { run: RunPayload | undefined }
   if (!run) return null;
 
   const scores = summarizeTrialScores(run.grid);
+  const hasScores = scores.scoredCount > 0;
   const best = run.comboResults.reduce<number | null>((max, combo) => {
     const score = scorePercent(combo.avgScore);
     if (score == null) return max;
@@ -42,29 +43,38 @@ export default function ComboRunSummary({ run }: { run: RunPayload | undefined }
 
   return (
     <section className="run-summary pg-arena-card" aria-label="Run evaluation summary">
-      <div className={`run-score-hero score-tone--${tone}`}>
-        <Stack gap={2}>
-          <Text className="run-score-label">Overall evaluation</Text>
-          <Group gap={6} align="baseline" wrap="nowrap">
-            <Text component="span" className="run-score-value">
-              {roundedOverall ?? "—"}
+      {hasScores ? (
+        <div className={`run-score-hero score-tone--${tone}`}>
+          <Stack gap={2}>
+            <Text className="run-score-label">Overall evaluation</Text>
+            <Group gap={6} align="baseline" wrap="nowrap">
+              <Text component="span" className="run-score-value">
+                {roundedOverall ?? "—"}
+              </Text>
+              <Text component="span" className="run-score-scale">
+                /100
+              </Text>
+            </Group>
+          </Stack>
+          <Stack gap={3} align="flex-end" className="run-score-proof">
+            <Text fw={700} size="sm">
+              {`${formatPoints(scores.earnedPoints)} / ${formatPoints(scores.possiblePoints)} points`}
             </Text>
-            <Text component="span" className="run-score-scale">
-              /100
+            <Text size="xs" c="dimmed">
+              {COPY.app.setupsScored(scores.scoredCount, scores.totalCount)}
             </Text>
-          </Group>
-        </Stack>
-        <Stack gap={3} align="flex-end" className="run-score-proof">
-          <Text fw={700} size="sm">
-            {scores.scoredCount
-              ? `${formatPoints(scores.earnedPoints)} / ${formatPoints(scores.possiblePoints)} points`
-              : COPY.app.awaitingScores}
-          </Text>
-          <Text size="xs" c="dimmed">
-            {COPY.app.setupsScored(scores.scoredCount, scores.totalCount)}
-          </Text>
-        </Stack>
-      </div>
+          </Stack>
+        </div>
+      ) : (
+        <div className="run-score-hero score-tone--neutral run-score-hero--waiting">
+          <Stack gap={2}>
+            <Text className="run-score-label">{COPY.app.awaitingScores}</Text>
+            <Text size="sm" c="dimmed">
+              {COPY.app.setupsScored(scores.scoredCount, scores.totalCount)}
+            </Text>
+          </Stack>
+        </div>
+      )}
 
       <SimpleGrid cols={{ base: 2, md: 4 }} spacing={0} className="run-summary-details">
         <Group gap="sm" className="run-summary-cell">
@@ -132,14 +142,20 @@ export default function ComboRunSummary({ run }: { run: RunPayload | undefined }
           <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
             {COPY.app.bestScore}
           </Text>
-          <Group gap={3} align="baseline">
-            <Text size="lg" fw={750}>
-              {best ?? "—"}
+          {hasScores ? (
+            <Group gap={3} align="baseline">
+              <Text size="lg" fw={750}>
+                {best ?? "—"}
+              </Text>
+              <Text size="xs" c="dimmed">
+                /100
+              </Text>
+            </Group>
+          ) : (
+            <Text size="sm" c="dimmed">
+              {COPY.app.awaitingBestScore}
             </Text>
-            <Text size="xs" c="dimmed">
-              /100
-            </Text>
-          </Group>
+          )}
         </Stack>
       </SimpleGrid>
     </section>

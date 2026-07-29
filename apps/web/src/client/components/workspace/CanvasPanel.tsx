@@ -120,13 +120,15 @@ export default function CanvasPanel({
             <ResultsPanel runName={run.run.name} combos={run.comboResults} />
           )}
 
-          <RunTimeline
-            runId={runId}
-            runStatus={run.run.status}
-            setups={setupLabels}
-            startedAt={run.run.startedAt}
-            finishedAt={run.run.finishedAt}
-          />
+          {!isActive && runId && (
+            <RunTimeline
+              runId={runId}
+              runStatus={run.run.status}
+              setups={setupLabels}
+              startedAt={run.run.startedAt}
+              finishedAt={run.run.finishedAt}
+            />
+          )}
         </>
       )}
 
