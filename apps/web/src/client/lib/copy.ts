@@ -288,6 +288,9 @@ export const COPY = {
     budgetTripped: "Stopped: budget limit reached",
     seeLogs: "see logs",
     unknown: "Update",
+    /** Distinguishes the lines on screen from everything the run has emitted. */
+    count: (shown: number, total: number) =>
+      shown < total ? `${shown} of ${total}` : `${total}`,
   },
   stages: {
     findPassages: (n: number) => `Retrieve (${n} passages)`,

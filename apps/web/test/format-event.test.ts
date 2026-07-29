@@ -5,6 +5,7 @@ import {
   formatActivityLine,
 } from "../src/client/lib/format-event.js";
 import { comboShortLabels } from "../src/client/lib/combo-display.js";
+import { COPY } from "../src/client/lib/copy.js";
 import type { ComboResult } from "@ragtime/core";
 
 function combo(overrides: Partial<ComboResult> & { comboId: string }): ComboResult {
@@ -92,6 +93,11 @@ test("tones a run status by its payload, not just the event type", () => {
   assert.equal(eventTone({ type: "run.status", payload: { status: "running" } }), "active");
   assert.equal(eventTone({ type: "trial.retry", payload: {} }), "warn");
   assert.equal(eventTone({ type: "trial.stage", payload: {} }), "done");
+});
+
+test("distinguishes the visible lines from the run's full event count", () => {
+  assert.equal(COPY.events.count(20, 47), "20 of 47");
+  assert.equal(COPY.events.count(6, 6), "6");
 });
 
 test("shortens setup names only while they stay unique", () => {

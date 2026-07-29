@@ -86,7 +86,7 @@ export default function RunTimeline({
       <UnstyledButton className="arena-feed-toggle" onClick={toggle} aria-expanded={open}>
         <Text className="pg-section-title">{COPY.app.eventLog}</Text>
         <Text size="xs" c="dimmed">
-          {open ? "Hide" : "Show"} ({events.length})
+          {open ? "Hide" : "Show"} ({COPY.events.count(lines.length, events.length)})
         </Text>
       </UnstyledButton>
 
