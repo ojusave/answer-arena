@@ -8,6 +8,18 @@ const ACTIVE_RUN_STATUSES = new Set(["draft", "ingesting", "running", "aggregati
 const EPSILON_USD = 0.000001;
 export const COST_RESERVATION_LEASE_MS = 120_000;
 
+/**
+ * A reservation holds the per-call ceiling, not the expected spend, so a wide
+ * fan-out can reserve most of the budget for calls that will cost a fraction of
+ * it. That contention clears as those calls settle, so wait for it instead of
+ * spending one of the trial's few attempts on a condition that fixes itself.
+ */
+const RESERVATION_WAIT_MS = [250, 500, 1000, 2000, 4000];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class BudgetReservationError extends Error {
   constructor(
     message: string,
@@ -51,7 +63,7 @@ export async function reserveCost(
     throw new Error("Invalid cost operation key");
   }
 
-  const result = await db.transaction(async (tx) => {
+  const attempt = () => db.transaction(async (tx) => {
     const runRows = await tx.execute<{
       total_cost_usd: string;
       reserved_cost_usd: string;
@@ -213,24 +225,33 @@ export async function reserveCost(
     return { allowed: true as const, maxCostUsd: reservation };
   });
 
-  if (!result.allowed) {
+  for (let wait = 0; ; wait++) {
+    const result = await attempt();
+    if (result.allowed) {
+      return {
+        maxCostUsd: result.maxCostUsd,
+        replayAvailable: result.replayAvailable,
+        replayResult: result.replayResult,
+      };
+    }
     if (result.tripped) {
       await appendRunEvent(db, runId, "budget.tripped", {
         totalUsd: result.total,
         budgetUsd: result.budget,
       });
     }
-    throw new BudgetReservationError(
-      result.reason,
-      result.status,
-      result.retryable
-    );
+    // A spent budget or a closed run will not resolve by waiting; only
+    // contention with in-flight reservations will.
+    const delayMs = RESERVATION_WAIT_MS[wait];
+    if (!result.retryable || delayMs === undefined) {
+      throw new BudgetReservationError(
+        result.reason,
+        result.status,
+        result.retryable
+      );
+    }
+    await sleep(delayMs);
   }
-  return {
-    maxCostUsd: result.maxCostUsd,
-    replayAvailable: result.replayAvailable,
-    replayResult: result.replayResult,
-  };
 }
 
 export async function settleCost(

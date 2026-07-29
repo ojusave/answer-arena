@@ -144,6 +144,46 @@ test("judge retries only malformed output and accounts for both calls", async ()
   ]);
 });
 
+test("judge retries an empty response with room to finish", async () => {
+  const maxTokens = [];
+  const gateway = {
+    async chat(req) {
+      maxTokens.push(req.maxTokens);
+      // A reasoning model that spent its whole cap thinking answers with nothing.
+      return maxTokens.length === 1
+        ? { text: "", receipt: { latencyMs: 10, costUsd: 0.01 } }
+        : {
+            text: JSON.stringify({
+              faithfulness: 8,
+              correctness: 7,
+              completeness: 6,
+              rationale: "second call had room",
+            }),
+            receipt: { latencyMs: 12, costUsd: 0.02 },
+          };
+    },
+  };
+
+  const result = await rubricScorer.score({
+    gateway,
+    judgeModel: "judge/model",
+    context: "context",
+    question: "question",
+    referenceAnswer: "reference",
+    candidate: "candidate",
+  });
+
+  assert.equal(result.rationale, "second call had room");
+  assert.ok(
+    maxTokens[1] > maxTokens[0],
+    `retry should raise max tokens, got ${maxTokens.join(" then ")}`
+  );
+});
+
+test("judge parsing names an empty response", () => {
+  assert.throws(() => parseJudgeJson("   "), /empty response/);
+});
+
 test("judge provider errors are not retried", async () => {
   let calls = 0;
   const gateway = {

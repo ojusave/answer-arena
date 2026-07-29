@@ -13,6 +13,13 @@ import type {
 import type { TrialStageJudge } from "../schemas.js";
 import { runCostedOperation } from "./cost.js";
 
+/**
+ * Reasoning models bill their thinking against `max_tokens` and return an empty
+ * message when the cap lands mid-thought, so the retry gets room to finish.
+ */
+const JUDGE_MAX_TOKENS = 768;
+const JUDGE_RETRY_MAX_TOKENS = 3072;
+
 export const rubricScorer: Scorer = {
   async score(input: ScorerInput) {
     const hasReference =
@@ -38,7 +45,7 @@ export const rubricScorer: Scorer = {
             { role: "system", content: systemPrompt },
             { role: "user", content: userContent },
           ],
-          maxTokens: 768,
+          maxTokens: JUDGE_MAX_TOKENS,
           maxCostUsd,
         }),
     });
@@ -60,7 +67,7 @@ export const rubricScorer: Scorer = {
               { role: "system", content: systemPrompt },
               { role: "user", content: userContent + "\n\nRespond with JSON only." },
             ],
-            maxTokens: 768,
+            maxTokens: JUDGE_RETRY_MAX_TOKENS,
             maxCostUsd,
           }),
       });
@@ -97,6 +104,11 @@ export function parseJudgeJson(
 } {
   const requireCorrectness = options.requireCorrectness ?? true;
   const trimmed = raw.trim();
+  // Named rather than left to JSON.parse, whose "Unexpected end of JSON input"
+  // reads like malformed output instead of a model that answered with nothing.
+  if (trimmed === "") {
+    throw new Error("Judge returned an empty response");
+  }
   const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
   const jsonStr = fenceMatch ? fenceMatch[1]!.trim() : trimmed;
   const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
