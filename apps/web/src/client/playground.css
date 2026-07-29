@@ -416,15 +416,19 @@
 }
 
 .arena-feed-row--active .arena-feed-dot {
-  background: var(--mantine-color-indigo-5);
+  background: var(--pg-accent);
 }
 
 .arena-feed-row--done .arena-feed-dot {
-  background: var(--mantine-color-green-6);
+  background: var(--render-green-500);
+}
+
+.arena-feed-row--warn .arena-feed-dot {
+  background: var(--render-yellow-400);
 }
 
 .arena-feed-row--failed .arena-feed-dot {
-  background: var(--mantine-color-red-6);
+  background: var(--render-red-500);
 }
 
 .arena-feed-copy {

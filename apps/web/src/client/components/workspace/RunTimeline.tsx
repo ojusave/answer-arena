@@ -1,10 +1,10 @@
-import { Collapse, Loader, Stack, Text, UnstyledButton } from "@mantine/core";
+import { Collapse, Stack, Text, UnstyledButton } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { COPY } from "../../lib/copy";
-import { formatActivityLine } from "../../lib/format-event";
+import { eventTone, formatActivityLine, type SetupLabels } from "../../lib/format-event";
 
 type EventRow = {
   id: number;
@@ -14,13 +14,7 @@ type EventRow = {
 };
 
 const TERMINAL = new Set(["complete", "failed", "canceled", "budget_exceeded"]);
-
-function eventTone(type: string): string {
-  if (type.includes("failed") || type === "budget.tripped") return "failed";
-  if (type.includes("complete") || type === "trial.stage") return "done";
-  if (type.includes("running") || type === "doc.ingested" || type === "embed.batch") return "active";
-  return "idle";
-}
+const VISIBLE_LINES = 20;
 
 function formatTime(iso: string): string {
   try {
@@ -34,24 +28,14 @@ function formatTime(iso: string): string {
   }
 }
 
-function dedupeFeed(
-  events: Array<{ id: number; time: string; text: string; tone: string }>
-) {
-  const out: typeof events = [];
-  for (const line of events) {
-    const prev = out[out.length - 1];
-    if (prev && prev.text === line.text && prev.time === line.time) continue;
-    out.push(line);
-  }
-  return out;
-}
-
 export default function RunTimeline({
   runId,
   runStatus,
+  setups,
 }: {
   runId: string | null;
   runStatus: string;
+  setups: SetupLabels;
 }) {
   const [open, { toggle }] = useDisclosure(true);
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -68,8 +52,14 @@ export default function RunTimeline({
       if (!runId) return [];
       const rows = await api<EventRow[]>(`/api/runs/${runId}/events?after=${cursorRef.current}`);
       if (rows.length > 0) {
-        cursorRef.current = rows[rows.length - 1]!.id;
-        setEvents((prev) => [...prev, ...rows].slice(-500));
+        cursorRef.current = Math.max(cursorRef.current, rows[rows.length - 1]!.id);
+        // Deduplicate by event id: overlapping polls can return the same rows,
+        // but two setups finishing the same stage are distinct events.
+        setEvents((prev) => {
+          const seen = new Set(prev.map((e) => e.id));
+          const fresh = rows.filter((row) => !seen.has(row.id));
+          return fresh.length > 0 ? [...prev, ...fresh].slice(-500) : prev;
+        });
       }
       return rows;
     },
@@ -77,24 +67,26 @@ export default function RunTimeline({
     refetchInterval: TERMINAL.has(runStatus) ? false : 2000,
   });
 
-  const lines = useMemo(() => {
-    const mapped = [...events]
-      .reverse()
-      .map((e) => ({
-        id: e.id,
-        time: formatTime(e.at),
-        text: formatActivityLine(e),
-        tone: eventTone(e.type),
-      }));
-    return dedupeFeed(mapped).slice(0, 12);
-  }, [events]);
+  const lines = useMemo(
+    () =>
+      [...events]
+        .reverse()
+        .slice(0, VISIBLE_LINES)
+        .map((e) => ({
+          id: e.id,
+          time: formatTime(e.at),
+          text: formatActivityLine(e, setups),
+          tone: eventTone(e),
+        })),
+    [events, setups]
+  );
 
   return (
     <Stack gap="sm" className="run-timeline pg-arena-card pg-arena-card--subtle">
       <UnstyledButton className="arena-feed-toggle" onClick={toggle} aria-expanded={open}>
         <Text className="pg-section-title">{COPY.app.eventLog}</Text>
         <Text size="xs" c="dimmed">
-          {open ? "Hide" : "Show"} ({lines.length})
+          {open ? "Hide" : "Show"} ({events.length})
         </Text>
       </UnstyledButton>
 
@@ -108,20 +100,25 @@ export default function RunTimeline({
             Waiting for updates…
           </Text>
         ) : (
-          <Stack gap={6} className="arena-feed">
-            {lines.map((line) => (
-              <div key={line.id} className={`arena-feed-row arena-feed-row--${line.tone}`}>
-                <span className="arena-feed-dot" aria-hidden="true" />
-                <Stack gap={2} className="arena-feed-copy">
-                  <Text size="sm" fw={500} lh={1.35}>
-                    {line.text}
-                  </Text>
-                  <Text size="xs" c="dimmed" ff="monospace">
-                    {line.time}
-                  </Text>
-                </Stack>
-              </div>
-            ))}
+          <Stack gap={6}>
+            <Text size="xs" c="dimmed">
+              {COPY.app.eventLogHint}
+            </Text>
+            <Stack gap={6} className="arena-feed">
+              {lines.map((line) => (
+                <div key={line.id} className={`arena-feed-row arena-feed-row--${line.tone}`}>
+                  <span className="arena-feed-dot" aria-hidden="true" />
+                  <Stack gap={2} className="arena-feed-copy">
+                    <Text size="sm" fw={500} lh={1.35}>
+                      {line.text}
+                    </Text>
+                    <Text size="xs" c="dimmed" ff="monospace">
+                      {line.time}
+                    </Text>
+                  </Stack>
+                </div>
+              ))}
+            </Stack>
           </Stack>
         )}
       </Collapse>

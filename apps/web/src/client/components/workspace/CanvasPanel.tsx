@@ -1,5 +1,7 @@
 import { Alert, Button, Group, Loader, Stack, Text } from "@mantine/core";
+import { useMemo } from "react";
 import { COPY, runStatusLabel } from "../../lib/copy";
+import { comboShortLabels } from "../../lib/combo-display";
 import type { RunPayload } from "../../hooks/types";
 import AnswerCards from "./AnswerCards";
 import ComboProgressGrid from "./ComboProgressGrid";
@@ -43,6 +45,17 @@ export default function CanvasPanel({
   const isMultiQuestion = (run?.questions?.length ?? 0) > 1;
   const canEscalate =
     isComplete && !isMultiQuestion && totalQuestionCount > 1;
+
+  // Event rows carry a trialId; the feed needs the setup name behind it.
+  const setupLabels = useMemo(() => {
+    const byCombo = comboShortLabels(run?.comboResults ?? []);
+    return new Map(
+      (run?.grid ?? []).flatMap((cell) => {
+        const label = byCombo.get(cell.comboId);
+        return label ? [[cell.trialId, label] as [string, string]] : [];
+      })
+    );
+  }, [run?.comboResults, run?.grid]);
 
   return (
     <Stack gap="md" className="canvas-panel">
@@ -107,7 +120,11 @@ export default function CanvasPanel({
             <ResultsPanel runName={run.run.name} combos={run.comboResults} />
           )}
 
-          <RunTimeline runId={runId} runStatus={run.run.status} />
+          <RunTimeline
+            runId={runId}
+            runStatus={run.run.status}
+            setups={setupLabels}
+          />
         </>
       )}
 

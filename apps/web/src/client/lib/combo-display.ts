@@ -23,6 +23,29 @@ export function comboModels(combo: ComboResult): ComboModels {
   };
 }
 
+/**
+ * Shortest name that still identifies each setup within one run: the answer
+ * model alone when it is unique, otherwise the full three-model label.
+ */
+export function comboShortLabels(combos: ComboResult[]): Map<string, string> {
+  const counts = new Map<string, number>();
+  for (const combo of combos) {
+    const answer = shortModelName(combo.genModel);
+    counts.set(answer, (counts.get(answer) ?? 0) + 1);
+  }
+  return new Map(
+    combos.map((combo) => {
+      const answer = shortModelName(combo.genModel);
+      if (counts.get(answer) === 1) return [combo.comboId, answer];
+      const models = comboModels(combo);
+      return [
+        combo.comboId,
+        `${models.search} / ${models.rerank ?? "no rerank"} / ${answer}`,
+      ];
+    })
+  );
+}
+
 export function comboDurationMs(
   combo: ComboResult,
   status: string
