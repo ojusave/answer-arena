@@ -46,6 +46,10 @@ services:
         value: "3"
       - key: MAX_TRIALS_PER_RUN
         value: "324"
+      - key: MAX_ACTIVE_RUNS_PER_SESSION
+        value: "1"
+      - key: MAX_ACTIVE_RUNS_TOTAL
+        value: "5"
       - key: CHAOS_FAILURE_RATE
         value: "0"
       - key: NODE_VERSION
