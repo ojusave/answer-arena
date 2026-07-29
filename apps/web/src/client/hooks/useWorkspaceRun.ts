@@ -50,6 +50,9 @@ export function useWorkspaceRun() {
     queryKey: ["workspace-active-run"],
     queryFn: () => api<{ runId: string; status: string } | null>("/api/runs/active"),
     enabled: reattach && runId === null,
+    // Whether a run is in flight changes constantly, and a cached "none" here
+    // would leave the workspace idle while the session still holds a slot.
+    staleTime: 0,
   });
 
   useEffect(() => {
@@ -112,11 +115,18 @@ export function useWorkspaceRun() {
       notifySuccess(COPY.notify.comparisonStarted);
       qc.invalidateQueries({ queryKey: ["workspace-run", data.runId] });
     },
-    onError: (e) =>
+    onError: (e) => {
+      // The session already has a run this tab lost track of. Pull it back so
+      // the message about cancelling it refers to something on screen.
+      if (e instanceof Error && (e as Error & { code?: string }).code === "session_run_limit") {
+        setReattach(true);
+        qc.invalidateQueries({ queryKey: ["workspace-active-run"] });
+      }
       notifyError(
         "Could not start comparison",
         e instanceof Error ? friendlyError(e.message) : undefined
-      ),
+      );
+    },
   });
 
   const cancel = useMutation({
