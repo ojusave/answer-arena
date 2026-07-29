@@ -2,6 +2,7 @@ export * from "./schemas.js";
 export * from "./prompts.js";
 export * from "./config.js";
 export * from "./errors.js";
+export * from "./run-admission.js";
 export * from "./ports.js";
 export * from "./workflow-ports.js";
 export * from "./pipeline/extract.js";

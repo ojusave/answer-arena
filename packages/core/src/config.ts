@@ -33,6 +33,10 @@ export function getAppConfig() {
     dbPoolMax: envNumber("DB_POOL_MAX", 3),
     /** Hard cap on trials per bake-off (combos × questions). Protects basic Postgres. */
     maxTrialsPerRun: envNumber("MAX_TRIALS_PER_RUN", 324),
+    /** Concurrent runs one browser session may hold. 0 disables the limit. */
+    maxActiveRunsPerSession: envNumber("MAX_ACTIVE_RUNS_PER_SESSION", 1),
+    /** Concurrent runs across every session. Bounds worst-case spend and DB load. */
+    maxActiveRunsTotal: envNumber("MAX_ACTIVE_RUNS_TOTAL", 5),
     chaosFailureRate: envNumber("CHAOS_FAILURE_RATE", 0),
     workflowSlug: envString("WORKFLOW_SLUG", "ragtime-workflows"),
   };

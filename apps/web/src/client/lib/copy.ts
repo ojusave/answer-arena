@@ -104,6 +104,10 @@ export function friendlyError(raw: string, meta?: FriendlyErrorMeta): string {
       return "Run did not start: the configured workflow task is unavailable.";
     case "workflow_unavailable":
       return "Run did not start: the workflow dispatcher could not be reached. Try again shortly.";
+    // Admission messages already name the limit that was hit, so pass them through.
+    case "session_run_limit":
+    case "global_run_limit":
+      return raw;
     default:
       break;
   }

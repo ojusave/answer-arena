@@ -7,6 +7,9 @@ import {
   comboLabel,
   safePersistedError,
   WorkflowDispatchError,
+  RunAdmissionError,
+  checkRunAdmission,
+  STRANDED_DRAFT_SECONDS,
 } from "@ragtime/core";
 import { createWorkflowDispatcher } from "@ragtime/composition";
 import {
@@ -18,6 +21,9 @@ import {
   getChunksByIds,
   appendRunEvent,
   transitionRun,
+  countActiveRuns,
+  lockRunAdmission,
+  reapStrandedDraftRuns,
 } from "@ragtime/db";
 import { getOwnedRun } from "../lib/ownership.js";
 import { asSessionRequest } from "../types.js";
@@ -76,51 +82,73 @@ export function registerRunRoutes(app: FastifyInstance): void {
       return reply.status(rejection.statusCode).send({ error: rejection.error });
     }
 
-    const run = await db.transaction(async (tx) => {
-      const [createdRun] = await tx
-        .insert(runs)
-        .values({
-          corpusId: plan.config.corpusId,
-          sessionId,
-          name: plan.config.name,
-          status: "draft",
-          config: plan.config,
-          budgetUsd: String(budgetUsd),
-        })
-        .returning();
-      if (!createdRun) throw new Error("Failed to create run.");
+    let run: typeof runs.$inferSelect;
+    try {
+      run = await db.transaction(async (tx) => {
+        // Decide admission under a lock so two simultaneous requests cannot
+        // both read a stale count and both start a run.
+        await lockRunAdmission(tx);
+        await reapStrandedDraftRuns(tx, STRANDED_DRAFT_SECONDS);
+        const rejection = checkRunAdmission(
+          await countActiveRuns(tx, sessionId),
+          {
+            maxActiveRunsPerSession: config.maxActiveRunsPerSession,
+            maxActiveRunsTotal: config.maxActiveRunsTotal,
+          }
+        );
+        if (rejection) throw rejection;
 
-      const relevanceThreshold =
-        plan.config.relevanceThreshold != null
-          ? String(plan.config.relevanceThreshold)
-          : null;
-      const comboSeeds = plan.config.setups
-        ? plan.config.setups.map((setup) => ({
-            embeddingModel: setup.embeddingModel,
-            rerankModel: setup.rerankModel,
-            genModel: setup.genModel,
-          }))
-        : plan.config.embeddingModels.flatMap((embeddingModel) =>
-            plan.config.rerankModels.flatMap((rerankModel) =>
-              plan.config.genModels.map((genModel) => ({
-                embeddingModel,
-                rerankModel,
-                genModel,
-              }))
-            )
-          );
-      const comboRows = comboSeeds.map((seed) => ({
-        runId: createdRun.id,
-        embeddingModel: seed.embeddingModel,
-        rerankModel: seed.rerankModel,
-        genModel: seed.genModel,
-        retrieveK: plan.config.retrieveK,
-        finalK: plan.config.finalK,
-        relevanceThreshold,
-      }));
-      await tx.insert(combos).values(comboRows);
-      return createdRun;
-    });
+        const [createdRun] = await tx
+          .insert(runs)
+          .values({
+            corpusId: plan.config.corpusId,
+            sessionId,
+            name: plan.config.name,
+            status: "draft",
+            config: plan.config,
+            budgetUsd: String(budgetUsd),
+          })
+          .returning();
+        if (!createdRun) throw new Error("Failed to create run.");
+
+        const relevanceThreshold =
+          plan.config.relevanceThreshold != null
+            ? String(plan.config.relevanceThreshold)
+            : null;
+        const comboSeeds = plan.config.setups
+          ? plan.config.setups.map((setup) => ({
+              embeddingModel: setup.embeddingModel,
+              rerankModel: setup.rerankModel,
+              genModel: setup.genModel,
+            }))
+          : plan.config.embeddingModels.flatMap((embeddingModel) =>
+              plan.config.rerankModels.flatMap((rerankModel) =>
+                plan.config.genModels.map((genModel) => ({
+                  embeddingModel,
+                  rerankModel,
+                  genModel,
+                }))
+              )
+            );
+        const comboRows = comboSeeds.map((seed) => ({
+          runId: createdRun.id,
+          embeddingModel: seed.embeddingModel,
+          rerankModel: seed.rerankModel,
+          genModel: seed.genModel,
+          retrieveK: plan.config.retrieveK,
+          finalK: plan.config.finalK,
+          relevanceThreshold,
+        }));
+        await tx.insert(combos).values(comboRows);
+        return createdRun;
+      });
+    } catch (err) {
+      if (err instanceof RunAdmissionError) {
+        reply.header("Retry-After", String(err.retryAfterSeconds));
+        return reply.status(429).send({ error: err.message, code: err.code });
+      }
+      throw err;
+    }
 
     try {
       await workflowDispatcher.dispatch("run_bakeoff", [run.id]);
