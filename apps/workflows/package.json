@@ -10,16 +10,12 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@langchain/textsplitters": "^0.1.0",
     "@ragtime/composition": "workspace:*",
     "@ragtime/core": "workspace:*",
     "@ragtime/db": "workspace:*",
-    "drizzle-orm": "^0.39.3",
-    "html-to-text": "^9.0.5",
-    "postgres": "^3.4.5"
+    "drizzle-orm": "^0.39.3"
   },
   "devDependencies": {
-    "@types/html-to-text": "^9.0.4",
     "@types/node": "^22.13.10",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3"
