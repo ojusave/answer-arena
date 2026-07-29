@@ -67,8 +67,6 @@ Blueprints do not create Workflow services yet. In the Dashboard:
 | `DATABASE_URL` | Workflow | Internal URL from `ragtime-db` (Blueprint wires this on the web service) |
 | `APP_URL` | Workflow | Public web URL for OpenRouter `HTTP-Referer` (Blueprint sets this on the web service from `RENDER_EXTERNAL_URL`) |
 
-Optional: set `MODEL_GATEWAY=fake` on both services for a zero-spend smoke deploy (no OpenRouter key).
-
 ### 4. Open the app
 
 Visit the web service URL. Demo data seeds through the UI. Compose a small comparison (two setups, one question) and click **Run**.
@@ -84,7 +82,7 @@ A suggested-matrix smoke with budget-tier models usually lands in low single-dig
 | `RENDER_API_KEY` | (required on web) | Workflow triggers |
 | `APP_URL` | from `RENDER_EXTERNAL_URL` on web | OpenRouter attribution |
 | `OPENROUTER_APP_TITLE` | `RAGtime` | `X-OpenRouter-Title` |
-| `MODEL_GATEWAY` | `openrouter` | `fake` for zero-spend CI / smoke |
+| `MODEL_GATEWAY` | `openrouter` | Registered gateway id; only `openrouter` ships today |
 | `WORKFLOW_DISPATCHER` | `render` | Composition root for task triggers |
 | `WORKFLOW_SLUG` | `ragtime-workflows` | `{slug}/{task_name}` prefix |
 | `JUDGE_MODEL` | (required) | Fallback judge if the run config omits one |
@@ -134,8 +132,6 @@ Ports live in `packages/core`. Implementations are chosen in `packages/compositi
 | Workflow dispatcher | `WORKFLOW_DISPATCHER` | `render` | Register another dispatcher in `packages/composition/src/workflow-dispatcher.ts` |
 | Vector store / extractor / chunker / scorer | (wired in composition pipeline) | pgvector, html-to-text, recursive splitter, rubric judge | Replace the adapter behind the existing port |
 
-`packages/gateway-fake` is the reference for deterministic zero-cost behavior.
-
 ## Project structure
 
 ```
@@ -146,7 +142,6 @@ ragtime/
   packages/composition/  Env-selected gateway + workflow wiring
   packages/db/           Drizzle schema, migrations, seed, PgVectorStore
   packages/gateway-openrouter/
-  packages/gateway-fake/
   render.yaml            Blueprint (web + Postgres)
   static/images/         README screenshots from the live deploy
 ```
@@ -170,7 +165,7 @@ Logs: web service and Workflow service logs in the Render Dashboard. The app tur
 pnpm test
 ```
 
-Builds workspace packages, then runs core / db / gateway / web unit tests (including execution-timeline builders).
+Builds workspace packages, then runs core / db / gateway / web unit tests (including execution-timeline builders). Set `TEST_DATABASE_URL` to also run the Postgres budget-recovery suite.
 
 ## Contributing
 

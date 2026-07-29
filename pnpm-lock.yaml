@@ -49,9 +49,6 @@ importers:
       fastify:
         specifier: ^5.2.1
         version: 5.10.0
-      papaparse:
-        specifier: ^5.5.2
-        version: 5.5.4
       react:
         specifier: ^19.0.0
         version: 19.2.7
@@ -74,9 +71,6 @@ importers:
       '@types/node':
         specifier: ^22.13.10
         version: 22.20.0
-      '@types/papaparse':
-        specifier: ^5.3.15
-        version: 5.5.2
       '@types/react':
         specifier: ^19.0.10
         version: 19.2.17
@@ -101,9 +95,6 @@ importers:
 
   apps/workflows:
     dependencies:
-      '@langchain/textsplitters':
-        specifier: ^0.1.0
-        version: 0.1.0(@langchain/core@0.3.80)
       '@ragtime/composition':
         specifier: workspace:*
         version: link:../../packages/composition
@@ -116,16 +107,7 @@ importers:
       drizzle-orm:
         specifier: ^0.39.3
         version: 0.39.3(postgres@3.4.9)
-      html-to-text:
-        specifier: ^9.0.5
-        version: 9.0.5
-      postgres:
-        specifier: ^3.4.5
-        version: 3.4.9
     devDependencies:
-      '@types/html-to-text':
-        specifier: ^9.0.4
-        version: 9.0.4
       '@types/node':
         specifier: ^22.13.10
         version: 22.20.0
@@ -1234,9 +1216,6 @@ packages:
   '@types/node@22.20.0':
     resolution: {integrity: sha512-QWlFW2wf3nTjC13/DqRnBpR4ZO36VJH/JVBkA/vcnmbTBNQIlnObqyqZE1tUR7+Ni23Lda8R1BxMfbXRpCUx5g==}
 
-  '@types/papaparse@5.5.2':
-    resolution: {integrity: sha512-gFnFp/JMzLHCwRf7tQHrNnfhN4eYBVYYI897CGX4MY1tzY9l2aLkVyx2IlKZ/SAqDbB3I1AOZW5gTMGGsqWliA==}
-
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
     peerDependencies:
@@ -1851,9 +1830,6 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
-
-  papaparse@5.5.4:
-    resolution: {integrity: sha512-SwzWD9gl/ElwYLCI0nUja1mFJzjq2D8ziShfNBa7zCHzkOozeOGDwHWQ+tvCzEZcewecWZ5U7kUopDnG+DFYEQ==}
 
   parseley@0.12.1:
     resolution: {integrity: sha512-e6qHKe3a9HWr0oMRVDTRhKce+bRO8VGQR3NyVwcjwrbhMmFCX9KszEV35+rn4AdilFAq9VPxP/Fe1wC9Qjd2lw==}
@@ -3077,10 +3053,6 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
-  '@types/papaparse@5.5.2':
-    dependencies:
-      '@types/node': 22.20.0
-
   '@types/react-dom@19.2.3(@types/react@19.2.17)':
     dependencies:
       '@types/react': 19.2.17
@@ -3660,8 +3632,6 @@ snapshots:
       p-finally: 1.0.0
 
   package-json-from-dist@1.0.1: {}
-
-  papaparse@5.5.4: {}
 
   parseley@0.12.1:
     dependencies:
