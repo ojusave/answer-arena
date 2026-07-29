@@ -1,11 +1,11 @@
 databases:
-  - name: answer-arena-db
+  - name: ragtime-db
     plan: basic-256mb
     postgresMajorVersion: "16"
 
 services:
   - type: web
-    name: answer-arena-web
+    name: ragtime-web
     runtime: node
     plan: starter
     buildCommand: pnpm install && pnpm build
@@ -15,7 +15,7 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: answer-arena-db
+          name: ragtime-db
           property: connectionString
       - key: OPENROUTER_API_KEY
         sync: false
@@ -23,7 +23,7 @@ services:
         sync: false
       - key: APP_URL
         fromService:
-          name: answer-arena-web
+          name: ragtime-web
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: OPENROUTER_APP_TITLE
@@ -35,7 +35,7 @@ services:
       - key: JUDGE_MODEL
         sync: false
       - key: WORKFLOW_SLUG
-        value: answer-arena-workflows
+        value: ragtime-workflows
       - key: MAX_RUN_BUDGET_USD
         value: "5"
       - key: MAX_PROVIDER_CALL_USD

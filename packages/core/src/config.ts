@@ -38,7 +38,7 @@ export function getAppConfig() {
     /** Concurrent runs across every session. Bounds worst-case spend and DB load. */
     maxActiveRunsTotal: envNumber("MAX_ACTIVE_RUNS_TOTAL", 5),
     chaosFailureRate: envNumber("CHAOS_FAILURE_RATE", 0),
-    workflowSlug: envString("WORKFLOW_SLUG", "answer-arena-workflows"),
+    workflowSlug: envString("WORKFLOW_SLUG", "ragtime-workflows"),
   };
 }
 
