@@ -18,6 +18,16 @@
  */
 export const STRANDED_DRAFT_SECONDS = 600;
 
+/**
+ * Ceiling for a run that started but never reached a terminal state, which
+ * happens when the workflow process disappears mid-run. Nothing else will move
+ * it, so without this it would hold one of the deployment's slots forever.
+ *
+ * Kept well past the `run_bakeoff` task timeout (1h) plus its one retry, so a
+ * slow-but-alive comparison is never mistaken for an abandoned one.
+ */
+export const ABANDONED_RUN_SECONDS = 10_800;
+
 export type ActiveRunCounts = {
   /** Active runs across every session on this deployment. */
   total: number;

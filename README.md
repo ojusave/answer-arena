@@ -103,6 +103,8 @@ A suggested-matrix smoke with budget-tier models usually lands in low single-dig
 
 Runs are scoped to an anonymous session cookie, so testers only see and cancel their own. Concurrency is bounded at run creation: the check runs inside a transaction holding a Postgres advisory lock, so simultaneous requests cannot both pass it. Over the limit, `POST /api/runs` returns `429` with a machine-readable `code` (`session_run_limit` or `global_run_limit`) and a `Retry-After` header.
 
+Reloading the page reattaches to the session's active run via `GET /api/runs/active`, so a run stays watchable and cancelable rather than silently holding a slot. Runs that nothing will finish (a row whose workflow task was never dispatched, or a run whose workflow disappeared) are failed on the next admission check so their slot returns to the pool.
+
 Worst-case concurrent spend is `MAX_ACTIVE_RUNS_TOTAL × MAX_RUN_BUDGET_USD`, which is $25 with the Blueprint defaults. Raising `MAX_ACTIVE_RUNS_TOTAL` also multiplies Postgres connections (`DB_POOL_MAX` per process) and provider rate-limit pressure, so move it alongside your database plan rather than on its own.
 
 ## How a run works
