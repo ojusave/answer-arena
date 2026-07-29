@@ -6,7 +6,7 @@ async function main() {
   console.log("=== Embed ===");
   const embed = await gateway.embed({
     model: process.env.SMOKE_EMBED_MODEL ?? "openai/text-embedding-3-small",
-    input: ["RAGtime smoke one", "RAGtime smoke two"],
+    input: ["Answer Arena smoke one", "Answer Arena smoke two"],
   });
   console.log("dims:", embed.dims);
   console.log("receipt:", embed.receipt);

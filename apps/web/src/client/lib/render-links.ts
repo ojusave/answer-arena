@@ -9,9 +9,9 @@ export function renderSignupUrlWithUtms(content = "footer_link"): string {
 }
 
 export const GITHUB_REPO_URL =
-  "https://github.com/ojusave/ragtime";
+  "https://github.com/ojusave/answer-arena";
 
 export const DEPLOY_TO_RENDER_URL =
-  "https://render.com/deploy?repo=https://github.com/ojusave/ragtime";
+  "https://render.com/deploy?repo=https://github.com/ojusave/answer-arena";
 
 export const WORKFLOWS_DOCS_URL = "https://render.com/docs/workflows";

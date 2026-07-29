@@ -291,7 +291,7 @@ async function openResponse(
         headers: {
           Accept: "text/html,application/xhtml+xml;q=0.9,text/plain;q=0.8",
           "Accept-Encoding": "gzip, deflate, br",
-          "User-Agent": "RAGtime/1.0 (document ingestion)",
+          "User-Agent": "AnswerArena/1.0 (document ingestion)",
         },
         lookup: pinnedLookup(target),
         method: "GET",
