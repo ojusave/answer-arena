@@ -1,5 +1,5 @@
-import { Alert, Button, Collapse, Group, Loader, Stack, Text } from "@mantine/core";
-import { useMemo, useState } from "react";
+import { Alert, Button, Group, Loader, Stack, Text } from "@mantine/core";
+import { useMemo } from "react";
 import { COPY, runStatusLabel } from "../../lib/copy";
 import { comboShortLabels } from "../../lib/combo-display";
 import type { RunPayload } from "../../hooks/types";
@@ -39,13 +39,17 @@ export default function CanvasPanel({
   onEscalate,
   escalating,
 }: Props) {
-  const [timelineOpen, setTimelineOpen] = useState(false);
   const status = run?.run.status;
-  const isActive = status === "ingesting" || status === "running" || status === "aggregating";
+  const isActive =
+    status === "draft" ||
+    status === "ingesting" ||
+    status === "running" ||
+    status === "aggregating";
   const isComplete = status === "complete" || status === "budget_exceeded";
   const isMultiQuestion = (run?.questions?.length ?? 0) > 1;
   const canEscalate =
     isComplete && !isMultiQuestion && totalQuestionCount > 1;
+  const showScoreSummary = Boolean(run) && !isActive;
 
   // Event rows carry a trialId; the feed needs the setup name behind it.
   const setupLabels = useMemo(() => {
@@ -79,7 +83,7 @@ export default function CanvasPanel({
 
       {run && (
         <>
-          {isActive && runId ? (
+          {runId && (
             <RunTimeline
               runId={runId}
               runStatus={run.run.status}
@@ -87,8 +91,6 @@ export default function CanvasPanel({
               startedAt={run.run.startedAt}
               finishedAt={run.run.finishedAt}
             />
-          ) : (
-            <ComboRunSummary run={run} />
           )}
 
           {isActive && (
@@ -131,30 +133,7 @@ export default function CanvasPanel({
             <ResultsPanel runName={run.run.name} combos={run.comboResults} />
           )}
 
-          {!isActive && runId && (
-            <Stack gap="xs" align="flex-start">
-              <Button
-                type="button"
-                variant="subtle"
-                size="compact-sm"
-                onClick={() => setTimelineOpen((open) => !open)}
-                aria-expanded={timelineOpen}
-              >
-                {timelineOpen
-                  ? COPY.app.hideExecutionTimeline
-                  : COPY.app.showExecutionTimeline}
-              </Button>
-              <Collapse in={timelineOpen} keepMounted={false} w="100%">
-                <RunTimeline
-                  runId={runId}
-                  runStatus={run.run.status}
-                  setups={setupLabels}
-                  startedAt={run.run.startedAt}
-                  finishedAt={run.run.finishedAt}
-                />
-              </Collapse>
-            </Stack>
-          )}
+          {showScoreSummary && <ComboRunSummary run={run} />}
         </>
       )}
 

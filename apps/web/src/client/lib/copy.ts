@@ -14,7 +14,7 @@ export const FLOW_STEPS = [
 ] as const;
 
 export const RUN_STATUS_LABEL: Record<string, string> = {
-  draft: "Draft",
+  draft: "Starting",
   ingesting: "Indexing documents",
   running: "Running",
   aggregating: "Aggregating",
@@ -232,12 +232,9 @@ export const COPY = {
     executionTimeline: "Execution timeline",
     executionTimelineHint:
       "Clock time across setups. Bar position reveals parallel work; hover a stage for duration and attempt.",
-    showExecutionTimeline: "Show execution timeline",
-    hideExecutionTimeline: "Hide execution timeline",
     howItWorks: "How it works",
     githubLink: "GitHub",
-    footerStatus: (gatewayLabel: string) => `Workflow orchestration + ${gatewayLabel}`,
-    gatewayDocs: (gatewayLabel: string) => `${gatewayLabel} docs`,
+    workflowsDocs: "Workflows docs",
   },
   howItWorks: {
     title: "How a comparison runs",

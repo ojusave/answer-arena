@@ -1,25 +1,16 @@
 import { Anchor, AppShell, Box, Group, Text, UnstyledButton } from "@mantine/core";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Route, Routes, Link } from "react-router-dom";
-import { GITHUB_REPO_URL } from "./lib/render-links";
-import { api } from "./lib/api";
+import { GITHUB_REPO_URL, WORKFLOWS_DOCS_URL } from "./lib/render-links";
 import RenderCtas from "./components/RenderCtas";
 import ThemeToggle from "./components/ThemeToggle";
 import HowItWorksModal from "./components/workspace/HowItWorksModal";
 import WorkspacePage from "./pages/WorkspacePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { COPY } from "./lib/copy";
-import type { Catalog } from "./hooks/types";
 
 export default function App() {
   const [showHow, setShowHow] = useState(false);
-  const { data: catalog } = useQuery({
-    queryKey: ["models"],
-    queryFn: () => api<Catalog>("/api/models"),
-  });
-  const gateway = catalog?.gateway;
-  const gatewayLabel = gateway?.label ?? "";
 
   return (
     <AppShell
@@ -59,12 +50,6 @@ export default function App() {
 
       <AppShell.Footer className="pg-footer">
         <Group justify="center" wrap="wrap" className="pg-footer-inner">
-          {gatewayLabel ? (
-            <>
-              <span className="pg-footer-status">{COPY.app.footerStatus(gatewayLabel)}</span>
-              <span className="pg-footer-divider" aria-hidden="true" />
-            </>
-          ) : null}
           <Group gap="lg" justify="center">
             <Anchor
               className="pg-footer-link"
@@ -74,16 +59,14 @@ export default function App() {
             >
               {COPY.app.githubLink}
             </Anchor>
-            {gateway?.docsUrl ? (
-              <Anchor
-                className="pg-footer-link"
-                href={gateway.docsUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {COPY.app.gatewayDocs(gatewayLabel)}
-              </Anchor>
-            ) : null}
+            <Anchor
+              className="pg-footer-link"
+              href={WORKFLOWS_DOCS_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {COPY.app.workflowsDocs}
+            </Anchor>
           </Group>
         </Group>
       </AppShell.Footer>

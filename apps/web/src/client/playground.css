@@ -556,8 +556,9 @@
 }
 
 @keyframes execution-progress {
+  /* March stripes left → right so progress reads with the timeline clock. */
   to {
-    background-position-x: 20px;
+    background-position-x: -20px;
   }
 }
 
