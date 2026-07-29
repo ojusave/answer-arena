@@ -19,7 +19,8 @@ export default function RenderCtas({ signupContent = "navbar_button", size = "co
         variant="filled"
         size={size}
       >
-        Deploy to Render
+        <span className="render-cta-full">Deploy to Render</span>
+        <span className="render-cta-short">Deploy</span>
       </Button>
       <Button
         className="render-signup"
@@ -30,7 +31,8 @@ export default function RenderCtas({ signupContent = "navbar_button", size = "co
         variant="outline"
         size={size}
       >
-        Sign up on Render
+        <span className="render-cta-full">Sign up on Render</span>
+        <span className="render-cta-short">Sign up</span>
       </Button>
     </Group>
   );

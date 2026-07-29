@@ -9,7 +9,7 @@ export const FLOW_STEPS = [
   },
   {
     label: "Run and compare",
-    description: "Setups run in parallel as Render Workflow tasks",
+    description: "Setups run in parallel as durable workflow tasks",
   },
 ] as const;
 
@@ -99,11 +99,11 @@ export function friendlyError(raw: string, meta?: FriendlyErrorMeta): string {
     case "provider_unavailable":
       return "The model gateway is temporarily unavailable. Try again shortly.";
     case "workflow_auth":
-      return "Run did not start: Render rejected the workflow trigger. RENDER_API_KEY on this deployment is invalid or expired.";
+      return "Run did not start: the workflow dispatcher rejected its credentials. Check the deployment configuration.";
     case "workflow_not_found":
-      return "Run did not start: Render found no matching workflow task. Check WORKFLOW_SLUG and that the workflow has deployed.";
+      return "Run did not start: the configured workflow task is unavailable.";
     case "workflow_unavailable":
-      return "Run did not start: Render could not be reached. Try again shortly.";
+      return "Run did not start: the workflow dispatcher could not be reached. Try again shortly.";
     default:
       break;
   }
@@ -115,7 +115,7 @@ export function friendlyError(raw: string, meta?: FriendlyErrorMeta): string {
   if (msg.includes("ECONNREFUSED") || msg.includes("CONNECT_TIMEOUT") || msg.includes("5432")) {
     return "Database unavailable. Wait a minute and try again.";
   }
-  if (msg.includes("403") || msg.includes("forbidden") || msg.includes("RENDER_API_KEY")) {
+  if (msg.includes("403") || msg.includes("forbidden")) {
     return "Run did not start. Check deployment configuration.";
   }
   if (msg.includes("402") || msg.includes("Insufficient credits")) {
@@ -132,11 +132,11 @@ export function friendlyError(raw: string, meta?: FriendlyErrorMeta): string {
 
 export const COPY = {
   app: {
-    subtitle: "Compare AI model combinations",
-    zones: { inputs: "Inputs", run: "Run", detail: "Setup detail" },
-    welcomeTitle: "Same question. Different models. Compare the answers.",
+    subtitle: "RAG pipeline comparison",
+    zones: { inputs: "Configure", run: "Compare", detail: "Inspect" },
+    welcomeTitle: "Compare retrieval pipelines against the same evidence.",
     welcomeBody:
-      "A RAG pipeline uses three models: one finds relevant passages, one reorders them, and one writes the answer. Pick a few combinations and see which ones get it right.",
+      "Load the sample corpus, choose the models in each setup, then compare their answers, evidence, cost, and latency.",
     questionSection: "Question",
     modelsSection: "Setups",
     sampleQuestions: "Sample questions",
@@ -182,7 +182,7 @@ export const COPY = {
     demoLoadFailed: "Demo library failed to load",
     canvasIdleTitle: "No run in progress",
     canvasIdleBody:
-      "Pick your setups on the left and press Run. Answers appear here side by side.",
+      "Choose a question and configure at least one setup. Run the comparison to see every answer against the same evidence.",
     inspectorEmpty:
       "Select an answer to view its retrieved passages and the generated answer.",
     inspectorScoreAria: "Selected setup score",
@@ -227,7 +227,7 @@ export const COPY = {
     eventLog: "Event log",
     howItWorks: "How it works",
     githubLink: "GitHub",
-    footerStatus: (gatewayLabel: string) => `Render Workflows + ${gatewayLabel}`,
+    footerStatus: (gatewayLabel: string) => `Workflow orchestration + ${gatewayLabel}`,
     gatewayDocs: (gatewayLabel: string) => `${gatewayLabel} docs`,
   },
   howItWorks: {
@@ -242,8 +242,8 @@ export const COPY = {
         body: "Each setup is one combination of the three models.",
       },
       {
-        title: "Render Workflows",
-        body: "Setups run in parallel as Render Workflow tasks. Click any answer to see the passages and scores behind it.",
+        title: "Durable workflow tasks",
+        body: "Setups run in parallel as durable tasks. Click any answer to see the passages and scores behind it.",
       },
     ],
     footnote: "Runs are scoped to this browser session.",

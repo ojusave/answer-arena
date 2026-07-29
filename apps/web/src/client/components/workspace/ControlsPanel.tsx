@@ -91,6 +91,7 @@ export default function ControlsPanel({
 
   return (
     <Stack gap="sm" className="controls-panel">
+      <Text className="pg-control-eyebrow">01 / {COPY.app.questionSection}</Text>
       <Select
         {...selectFieldProps}
         label={COPY.app.sampleQuestions}
@@ -117,7 +118,7 @@ export default function ControlsPanel({
       />
 
       <Group justify="space-between" align="center" mt={4}>
-        <Text className="pg-section-title">{COPY.app.modelsSection}</Text>
+        <Text className="pg-control-eyebrow">02 / {COPY.app.modelsSection}</Text>
         <Button variant="subtle" size="compact-xs" onClick={applyStarterPreset}>
           {COPY.app.starterPreset}
         </Button>
@@ -280,13 +281,21 @@ export default function ControlsPanel({
         </Stack>
       </Collapse>
 
-      <Text size="xs" c={summary.overLimit ? "red" : "dimmed"}>
-        {summary.line}
-      </Text>
-
-      <Button type="button" size="sm" onClick={onRun} loading={running} disabled={!canRun || running} fullWidth>
-        {running ? COPY.app.runningButton : COPY.app.runButton}
-      </Button>
+      <div className="control-runbar">
+        <Text size="xs" c={summary.overLimit ? "red" : "dimmed"}>
+          {summary.line}
+        </Text>
+        <Button
+          type="button"
+          size="sm"
+          onClick={onRun}
+          loading={running}
+          disabled={!canRun || running}
+          fullWidth
+        >
+          {running ? COPY.app.runningButton : COPY.app.runButton}
+        </Button>
+      </div>
     </Stack>
   );
 }

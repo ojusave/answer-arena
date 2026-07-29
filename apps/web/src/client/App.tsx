@@ -23,21 +23,20 @@ export default function App() {
 
   return (
     <AppShell
-      header={{ height: 56 }}
-      footer={{ height: 50 }}
+      header={{ height: { base: 48, sm: 66 } }}
+      footer={{ height: 48 }}
       padding={0}
       className="pg-shell"
     >
       <AppShell.Header className="pg-header">
         <Group h="100%" justify="space-between" wrap="nowrap" className="pg-nav">
           <Anchor component={Link} to="/" className="pg-brand">
-            <span className="pg-brand-mark">
-              <img src="/favicon.svg" alt="" width="18" height="18" />
-            </span>
+            <img src="/favicon.svg" alt="" width="24" height="24" className="pg-brand-mark" />
             <Box className="pg-brand-copy">
               <Text className="pg-brand-name">RAGtime</Text>
-              <Text className="pg-brand-subtitle">{COPY.app.subtitle}</Text>
             </Box>
+            <span className="pg-brand-rule" aria-hidden="true" />
+            <Text className="pg-brand-subtitle">{COPY.app.subtitle}</Text>
           </Anchor>
 
           <Group gap="xs" wrap="nowrap" className="rag-utility-nav">
@@ -59,11 +58,14 @@ export default function App() {
       </AppShell.Main>
 
       <AppShell.Footer className="pg-footer">
-        <Group justify="space-between" wrap="wrap" className="pg-footer-inner">
-          <span className="pg-footer-status">
-            {gatewayLabel ? COPY.app.footerStatus(gatewayLabel) : ""}
-          </span>
-          <Group gap="lg">
+        <Group justify="center" wrap="wrap" className="pg-footer-inner">
+          {gatewayLabel ? (
+            <>
+              <span className="pg-footer-status">{COPY.app.footerStatus(gatewayLabel)}</span>
+              <span className="pg-footer-divider" aria-hidden="true" />
+            </>
+          ) : null}
+          <Group gap="lg" justify="center">
             <Anchor
               className="pg-footer-link"
               href={GITHUB_REPO_URL}

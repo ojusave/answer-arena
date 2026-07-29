@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { COPY, friendlyError } from "../lib/copy";
 import { notifyError, notifySuccess } from "../lib/notify";
@@ -46,6 +46,15 @@ export function useWorkspaceRun() {
     queryFn: () => api<TrialDetail>(`/api/trials/${selectedTrialId}`),
     enabled: Boolean(selectedTrialId),
   });
+
+  useEffect(() => {
+    if (selectedTrialId || !runQuery.data?.grid.length) return;
+    const firstUseful =
+      runQuery.data.grid.find((cell) => cell.status === "complete") ??
+      runQuery.data.grid.find((cell) => cell.status === "running") ??
+      runQuery.data.grid[0];
+    if (firstUseful?.trialId) setSelectedTrialId(firstUseful.trialId);
+  }, [runQuery.data?.grid, selectedTrialId]);
 
   const start = useMutation({
     mutationFn: async (args: StartArgs) => {

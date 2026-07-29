@@ -6,7 +6,9 @@ import {
   envNumber,
   comboLabel,
   safePersistedError,
+  WorkflowDispatchError,
 } from "@ragtime/core";
+import { createWorkflowDispatcher } from "@ragtime/composition";
 import {
   getDb,
   schema,
@@ -17,10 +19,6 @@ import {
   appendRunEvent,
   transitionRun,
 } from "@ragtime/db";
-import {
-  classifyWorkflowStartError,
-  getRenderClient,
-} from "../lib/render-client.js";
 import { getOwnedRun } from "../lib/ownership.js";
 import { asSessionRequest } from "../types.js";
 import { createRunPlan, getRunPlanRejection } from "./run-plan.js";
@@ -39,6 +37,7 @@ function persistedQuestionSnapshot(config: unknown): string[] {
 export function registerRunRoutes(app: FastifyInstance): void {
   const db = getDb();
   const config = getAppConfig();
+  const workflowDispatcher = createWorkflowDispatcher(config.workflowSlug);
 
   app.post("/api/runs", async (req, reply) => {
     const { sessionId } = asSessionRequest(req);
@@ -124,10 +123,16 @@ export function registerRunRoutes(app: FastifyInstance): void {
     });
 
     try {
-      const render = getRenderClient();
-      await render.workflows.startTask(`${config.workflowSlug}/run_bakeoff`, [run.id]);
+      await workflowDispatcher.dispatch("run_bakeoff", [run.id]);
     } catch (err) {
-      const failure = classifyWorkflowStartError(err, config.workflowSlug);
+      const failure =
+        err instanceof WorkflowDispatchError
+          ? err
+          : new WorkflowDispatchError(
+              "workflow_unavailable",
+              "The workflow dispatcher could not start the task.",
+              err instanceof Error ? err.message : String(err)
+            );
       const publicError = safePersistedError(err, failure.message);
       app.log.error(
         {

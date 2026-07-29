@@ -1,5 +1,8 @@
-import { task } from "@renderinc/sdk/workflows";
 import { and, eq, inArray, sql } from "drizzle-orm";
+import {
+  createPipelinePorts,
+  defineWorkflowTask,
+} from "@ragtime/composition";
 import {
   runConfigSchema,
   QUESTION_GEN_SYSTEM,
@@ -12,7 +15,6 @@ import {
   schema,
   transitionRun,
 } from "@ragtime/db";
-import { wirePorts } from "../wiring.js";
 import { runInWaves } from "../lib/fanout.js";
 import { ingestDocument, embedCorpus } from "./ingest.js";
 import {
@@ -44,10 +46,10 @@ async function countCompleteTrials(
   return rows.length;
 }
 
-export const aggregateRun = task(
+export const aggregateRun = defineWorkflowTask(
   {
     name: "aggregate_run",
-    plan: "starter",
+    compute: "small",
     timeoutSeconds: 120,
     retry: { maxRetries: 2, waitDurationMs: 3000, backoffScaling: 2 },
   },
@@ -74,16 +76,16 @@ export const aggregateRun = task(
   }
 );
 
-export const generateQuestions = task(
+export const generateQuestions = defineWorkflowTask(
   {
     name: "generate_questions",
-    plan: "starter",
+    compute: "small",
     timeoutSeconds: 120,
     retry: { maxRetries: 2, waitDurationMs: 3000, backoffScaling: 2 },
   },
   async function generateQuestions(args: { corpusId: string; n: number; model: string }) {
     const db = getDb();
-    const { gateway } = wirePorts();
+    const { gateway } = createPipelinePorts();
     const allChunks = await db.select().from(chunks).where(eq(chunks.corpusId, args.corpusId));
     if (allChunks.length === 0) throw new Error("No chunks in corpus");
 
@@ -119,10 +121,10 @@ export const generateQuestions = task(
   }
 );
 
-export const runBakeoff = task(
+export const runBakeoff = defineWorkflowTask(
   {
     name: "run_bakeoff",
-    plan: "standard",
+    compute: "standard",
     timeoutSeconds: 3600,
     retry: { maxRetries: 1, waitDurationMs: 10000, backoffScaling: 2 },
   },
@@ -182,7 +184,7 @@ export const runBakeoff = task(
       return { status };
     }
 
-    // Each phase is restartable. A Render retry resumes from the persisted run
+    // Each phase is restartable. A workflow retry resumes from the persisted run
     // status instead of returning early and leaving the run stranded.
     if (status === "ingesting") {
       const pendingDocs = await db

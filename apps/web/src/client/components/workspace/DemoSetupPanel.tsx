@@ -1,6 +1,5 @@
 import { Alert, Button, Group, Loader, Stack, Text, Title } from "@mantine/core";
 import { FLOW_STEPS, COPY } from "../../lib/copy";
-import RenderCtas from "../RenderCtas";
 
 type Props = {
   loading: boolean;
@@ -61,12 +60,11 @@ export default function DemoSetupPanel({ loading, failed, errorMessage, onRetry 
             </Group>
           )}
 
-          <Group justify="space-between" wrap="wrap" className="pg-setup-footer">
+          <div className="pg-setup-footer">
             <Text size="xs" c="dimmed">
               {COPY.howItWorks.footnote}
             </Text>
-            <RenderCtas signupContent="hero_cta" size="sm" />
-          </Group>
+          </div>
         </Stack>
       </div>
     </div>

@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
-import { task } from "@renderinc/sdk/workflows";
 import { eq, sql } from "drizzle-orm";
+import {
+  createPipelinePorts,
+  defineWorkflowTask,
+} from "@ragtime/composition";
 import {
   extractAndChunk,
   embedChunkBatch as pipelineEmbedBatch,
@@ -14,23 +17,22 @@ import {
   getMissingChunkIdsForModel,
 } from "@ragtime/db";
 import { getAppConfig } from "@ragtime/core";
-import { wirePorts } from "../wiring.js";
 import { maybeChaos, chunkIntoBatches } from "../lib/chaos.js";
 import { runInWaves } from "../lib/fanout.js";
 
 const { documents, chunks } = schema;
 
-export const ingestDocument = task(
+export const ingestDocument = defineWorkflowTask(
   {
     name: "ingest_document",
-    plan: "standard",
+    compute: "standard",
     timeoutSeconds: 300,
     retry: { maxRetries: 3, waitDurationMs: 3000, backoffScaling: 2 },
   },
   async function ingestDocument(args: { documentId: string; runId?: string }): Promise<{ chunkCount: number }> {
     const documentId = args.documentId;
     const db = getDb();
-    const ports = wirePorts();
+    const ports = createPipelinePorts();
     const doc = await db.query.documents.findFirst({ where: eq(documents.id, documentId) });
     if (!doc) throw new Error(`Document not found: ${documentId}`);
 
@@ -64,10 +66,10 @@ export const ingestDocument = task(
   }
 );
 
-export const embedChunkBatch = task(
+export const embedChunkBatch = defineWorkflowTask(
   {
     name: "embed_chunk_batch",
-    plan: "starter",
+    compute: "small",
     timeoutSeconds: 120,
     retry: { maxRetries: 5, waitDurationMs: 2000, backoffScaling: 2 },
   },
@@ -79,7 +81,7 @@ export const embedChunkBatch = task(
   }): Promise<{ embedded: number }> {
     maybeChaos();
     const db = getDb();
-    const ports = wirePorts();
+    const ports = createPipelinePorts();
     const { maxProviderCallUsd } = getAppConfig();
     const costController = createRunCostController(
       db,
@@ -112,10 +114,10 @@ export const embedChunkBatch = task(
   }
 );
 
-export const embedCorpus = task(
+export const embedCorpus = defineWorkflowTask(
   {
     name: "embed_corpus",
-    plan: "standard",
+    compute: "standard",
     timeoutSeconds: 600,
     retry: { maxRetries: 2, waitDurationMs: 5000, backoffScaling: 2 },
   },

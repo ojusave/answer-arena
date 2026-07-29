@@ -25,27 +25,21 @@ importers:
       '@mantine/core':
         specifier: ^7.17.1
         version: 7.17.8(@mantine/hooks@7.17.8(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@mantine/dropzone':
-        specifier: ^7.17.1
-        version: 7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@7.17.8(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@mantine/hooks':
         specifier: ^7.17.1
         version: 7.17.8(react@19.2.7)
       '@mantine/notifications':
         specifier: ^7.17.1
         version: 7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@7.17.8(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@ragtime/composition':
+        specifier: workspace:*
+        version: link:../../packages/composition
       '@ragtime/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@ragtime/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@ragtime/gateway-openrouter':
-        specifier: workspace:*
-        version: link:../../packages/gateway-openrouter
-      '@renderinc/sdk':
-        specifier: ^0.5.0
-        version: 0.5.1
       '@tanstack/react-query':
         specifier: ^5.67.2
         version: 5.101.2(react@19.2.7)
@@ -110,18 +104,15 @@ importers:
       '@langchain/textsplitters':
         specifier: ^0.1.0
         version: 0.1.0(@langchain/core@0.3.80)
+      '@ragtime/composition':
+        specifier: workspace:*
+        version: link:../../packages/composition
       '@ragtime/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@ragtime/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@ragtime/gateway-openrouter':
-        specifier: workspace:*
-        version: link:../../packages/gateway-openrouter
-      '@renderinc/sdk':
-        specifier: ^0.5.0
-        version: 0.5.1
       drizzle-orm:
         specifier: ^0.39.3
         version: 0.39.3(postgres@3.4.9)
@@ -141,6 +132,28 @@ importers:
       tsx:
         specifier: ^4.19.3
         version: 4.23.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+
+  packages/composition:
+    dependencies:
+      '@ragtime/core':
+        specifier: workspace:*
+        version: link:../core
+      '@ragtime/db':
+        specifier: workspace:*
+        version: link:../db
+      '@ragtime/gateway-openrouter':
+        specifier: workspace:*
+        version: link:../gateway-openrouter
+      '@renderinc/sdk':
+        specifier: ^0.5.0
+        version: 0.5.1
+    devDependencies:
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.20.0
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -1002,14 +1015,6 @@ packages:
   '@mantine/core@7.17.8':
     resolution: {integrity: sha512-42sfdLZSCpsCYmLCjSuntuPcDg3PLbakSmmYfz5Auea8gZYLr+8SS5k647doVu0BRAecqYOytkX2QC5/u/8VHw==}
     peerDependencies:
-      '@mantine/hooks': 7.17.8
-      react: ^18.x || ^19.x
-      react-dom: ^18.x || ^19.x
-
-  '@mantine/dropzone@7.17.8':
-    resolution: {integrity: sha512-c9WEArpP23E9tbRWqoznEY3bGPVntMuBKr3F2LQijgdpdALIzt6DYmwXu7gUajGX9Qg9NrCHenhvWLTYqKnRlA==}
-    peerDependencies:
-      '@mantine/core': 7.17.8
       '@mantine/hooks': 7.17.8
       react: ^18.x || ^19.x
       react-dom: ^18.x || ^19.x
@@ -1905,12 +1910,6 @@ packages:
     resolution: {integrity: sha512-t0BRVXvbiE/o20Hfw669rLbMCDWtYZLvmJigy2f0MxsXF+71pxhR3xOkspmsO8h3ZlNzyibAmtCa3l4lYKk6gQ==}
     peerDependencies:
       react: ^19.2.7
-
-  react-dropzone-esm@15.2.0:
-    resolution: {integrity: sha512-pPwR8xWVL+tFLnbAb8KVH5f6Vtl397tck8dINkZ1cPMxHWH+l9dFmIgRWgbh7V7jbjIcuKXCsVrXbhQz68+dVA==}
-    engines: {node: '>= 10.13'}
-    peerDependencies:
-      react: '>= 16.8 || 18.0.0'
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -2910,14 +2909,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
 
-  '@mantine/dropzone@7.17.8(@mantine/core@7.17.8(@mantine/hooks@7.17.8(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@7.17.8(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      '@mantine/core': 7.17.8(@mantine/hooks@7.17.8(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@mantine/hooks': 7.17.8(react@19.2.7)
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
-      react-dropzone-esm: 15.2.0(react@19.2.7)
-
   '@mantine/hooks@7.17.8(react@19.2.7)':
     dependencies:
       react: 19.2.7
@@ -3734,11 +3725,6 @@ snapshots:
     dependencies:
       react: 19.2.7
       scheduler: 0.27.0
-
-  react-dropzone-esm@15.2.0(react@19.2.7):
-    dependencies:
-      prop-types: 15.8.1
-      react: 19.2.7
 
   react-is@16.13.1: {}
 

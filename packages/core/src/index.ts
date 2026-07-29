@@ -3,6 +3,7 @@ export * from "./prompts.js";
 export * from "./config.js";
 export * from "./errors.js";
 export * from "./ports.js";
+export * from "./workflow-ports.js";
 export * from "./pipeline/extract.js";
 export * from "./pipeline/cost.js";
 export * from "./pipeline/chunk.js";
