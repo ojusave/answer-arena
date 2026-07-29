@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   buildExecutionTimeline,
+  describeTimelineFocus,
   formatDuration,
   spanPosition,
   type TimelineEvent,
 } from "../src/client/lib/execution-timeline.js";
 
 const START = Date.parse("2026-07-29T08:00:00.000Z");
-const setups = new Map([["trial-1", "qwen3"]]);
+const setups = new Map([["trial-1", { title: "Setup 1", detail: "qwen3" }]]);
 
 function event(
   id: number,
@@ -93,8 +94,8 @@ test("shows the parent workflow phases above concurrent setup rows", () => {
       end: endMs - START,
     })),
     [
-      { label: "Prepare corpus", status: "complete", start: 0, end: 3_000 },
-      { label: "Run setups", status: "running", start: 3_000, end: 10_000 },
+      { label: "Indexing documents", status: "complete", start: 0, end: 3_000 },
+      { label: "Running setups", status: "running", start: 3_000, end: 10_000 },
     ]
   );
 });
@@ -183,4 +184,42 @@ test("positions spans on the shared run clock and formats durations", () => {
   assert.equal(formatDuration(450), "450ms");
   assert.equal(formatDuration(5_250), "5.3s");
   assert.equal(formatDuration(65_000), "1m 5s");
+});
+
+test("describes live focus in plain language for beginners", () => {
+  const timeline = buildExecutionTimeline({
+    setups,
+    nowMs: START + 8_000,
+    runStartedAt: new Date(START).toISOString(),
+    runStatus: "running",
+    events: [
+      event(1, 1, "trial.stage.started", {
+        stage: "generation",
+        attempt: 1,
+      }),
+    ],
+  });
+
+  assert.equal(timeline.rows[0]!.label, "Setup 1");
+  assert.equal(timeline.rows[0]!.detail, "qwen3");
+  assert.match(describeTimelineFocus(timeline), /Setup 1 is writing an answer/);
+});
+
+test("uses Search / Answer labels that match the answer cards", () => {
+  const timeline = buildExecutionTimeline({
+    setups,
+    nowMs: START + 4_000,
+    runStartedAt: new Date(START).toISOString(),
+    runStatus: "running",
+    events: [
+      event(1, 1, "trial.stage.started", { stage: "retrieval", attempt: 1 }),
+      event(2, 2, "trial.stage", {
+        stage: "retrieval",
+        attempt: 1,
+        data: { latencyMs: 1_000 },
+      }),
+    ],
+  });
+
+  assert.equal(timeline.rows[0]!.spans[0]!.label, "Search");
 });

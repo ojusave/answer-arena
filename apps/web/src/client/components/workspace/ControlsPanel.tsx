@@ -16,7 +16,7 @@ import type { SampleQuestion } from "../../hooks/types";
 import type { useModelMatrix } from "../../hooks/useModelMatrix";
 import ProviderMark from "./ProviderMark";
 import SetupList from "./SetupList";
-import { LabelWithInfo } from "../InfoHint";
+import InfoHint, { LabelWithInfo } from "../InfoHint";
 
 type Matrix = ReturnType<typeof useModelMatrix>;
 
@@ -94,7 +94,13 @@ export default function ControlsPanel({
       <Text className="pg-control-eyebrow">01 / {COPY.app.questionSection}</Text>
       <Select
         {...selectFieldProps}
-        label={COPY.app.sampleQuestions}
+        label={
+          <LabelWithInfo
+            label={COPY.app.sampleQuestions}
+            info={COPY.app.sampleQuestionsInfo}
+            ariaLabel={COPY.app.fieldInfoAria(COPY.app.sampleQuestions)}
+          />
+        }
         placeholder="Choose a sample"
         searchable
         clearable
@@ -108,7 +114,13 @@ export default function ControlsPanel({
 
       <Textarea
         {...fieldProps}
-        label={COPY.app.yourQuestion}
+        label={
+          <LabelWithInfo
+            label={COPY.app.yourQuestion}
+            info={COPY.app.yourQuestionInfo}
+            ariaLabel={COPY.app.fieldInfoAria(COPY.app.yourQuestion)}
+          />
+        }
         placeholder={COPY.app.promptPlaceholder}
         value={prompt}
         onChange={(e) => onPromptChange(e.currentTarget.value)}
@@ -190,7 +202,13 @@ export default function ControlsPanel({
 
           <Checkbox
             size="xs"
-            label={COPY.app.noRerankLabel}
+            label={
+              <LabelWithInfo
+                label={COPY.app.noRerankLabel}
+                info={COPY.app.noRerankInfo}
+                ariaLabel={COPY.app.fieldInfoAria(COPY.app.noRerankLabel)}
+              />
+            }
             checked={noRerank}
             onChange={(e) => setNoRerank(e.currentTarget.checked)}
           />
@@ -258,21 +276,39 @@ export default function ControlsPanel({
         <Stack gap="xs">
           <NumberInput
             {...fieldProps}
-            label={COPY.app.retrieveLabel}
+            label={
+              <LabelWithInfo
+                label={COPY.app.retrieveLabel}
+                info={COPY.app.retrieveInfo}
+                ariaLabel={COPY.app.fieldInfoAria(COPY.app.retrieveLabel)}
+              />
+            }
             value={retrieveK}
             onChange={(v) => setRetrieveK(Number(v))}
             min={1}
           />
           <NumberInput
             {...fieldProps}
-            label={COPY.app.finalKLabel}
+            label={
+              <LabelWithInfo
+                label={COPY.app.finalKLabel}
+                info={COPY.app.finalKInfo}
+                ariaLabel={COPY.app.fieldInfoAria(COPY.app.finalKLabel)}
+              />
+            }
             value={finalK}
             onChange={(v) => setFinalK(Number(v))}
             min={1}
           />
           <NumberInput
             {...fieldProps}
-            label={COPY.app.budgetLabel}
+            label={
+              <LabelWithInfo
+                label={COPY.app.budgetLabel}
+                info={COPY.app.budgetInfo}
+                ariaLabel={COPY.app.fieldInfoAria(COPY.app.budgetLabel)}
+              />
+            }
             value={budget}
             onChange={setBudget}
             min={0.1}
@@ -282,9 +318,14 @@ export default function ControlsPanel({
       </Collapse>
 
       <div className="control-runbar">
-        <Text size="xs" c={summary.overLimit ? "red" : "dimmed"}>
-          {summary.line}
-        </Text>
+        <Group gap={4} wrap="nowrap" align="flex-start">
+          <Text size="xs" c={summary.overLimit ? "red" : "dimmed"} style={{ flex: 1 }}>
+            {summary.line}
+          </Text>
+          <InfoHint ariaLabel={COPY.app.fieldInfoAria("run summary")}>
+            {COPY.app.runSummaryInfo}
+          </InfoHint>
+        </Group>
         <Button
           type="button"
           size="sm"
