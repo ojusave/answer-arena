@@ -232,6 +232,8 @@ export const COPY = {
     executionTimeline: "Execution timeline",
     executionTimelineHint:
       "Clock time across setups. Bar position reveals parallel work; hover a stage for duration and attempt.",
+    showExecutionTimeline: "Show execution timeline",
+    hideExecutionTimeline: "Hide execution timeline",
     howItWorks: "How it works",
     githubLink: "GitHub",
     footerStatus: (gatewayLabel: string) => `Workflow orchestration + ${gatewayLabel}`,
