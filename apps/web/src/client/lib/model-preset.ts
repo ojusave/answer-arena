@@ -7,11 +7,15 @@ export function newSetupId(): string {
   return `setup-${Date.now().toString(36)}-${setupSeq}`;
 }
 
-/** Numeric price for sorting; missing or invalid prices sort last. */
+/**
+ * Numeric price for sorting; missing, invalid, and negative prices sort last.
+ * OpenRouter reports -1 for router models that pick a provider per request, so
+ * their real price is not known up front and cannot be compared.
+ */
 export function priceNumber(value?: string): number {
   if (value == null || value === "") return Number.POSITIVE_INFINITY;
   const n = Number(value);
-  return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+  return Number.isFinite(n) && n >= 0 ? n : Number.POSITIVE_INFINITY;
 }
 
 /** Sort by a pricing field ascending with a deterministic alphabetical tiebreak. */
@@ -34,6 +38,16 @@ export type StarterPreset = {
   premiumGenModel: string;
 };
 
+/** Ranking by price only means something for models that publish one. */
+function priced(
+  models: CatalogModel[],
+  key: "prompt" | "completion"
+): CatalogModel[] {
+  return models.filter((m) =>
+    Number.isFinite(priceNumber(m.pricing?.[key]))
+  );
+}
+
 /**
  * Derives a starter preset from live catalog data only (no hardcoded slugs):
  * cheapest embedding by prompt price, plus budget, mid, and premium chat models
@@ -43,8 +57,8 @@ export function deriveStarterPreset(
   catalog: Catalog | undefined
 ): StarterPreset | null {
   if (!catalog) return null;
-  const embeddings = sortByPrice(catalog.embedding, "prompt");
-  const chats = sortByPrice(catalog.chat, "completion");
+  const embeddings = priced(sortByPrice(catalog.embedding, "prompt"), "prompt");
+  const chats = priced(sortByPrice(catalog.chat, "completion"), "completion");
   if (embeddings.length === 0 || chats.length === 0) return null;
 
   const n = chats.length;
