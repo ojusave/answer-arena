@@ -30,6 +30,7 @@ export type RunTrialPipelineInput = {
   costController?: CostController;
   operationPrefix?: string;
   onCost?: (usd: number) => Promise<void>;
+  onStageStart?: (stage: keyof TrialStages) => Promise<void>;
   onStageComplete?: (
     stage: keyof TrialStages,
     value: NonNullable<TrialStages[keyof TrialStages]>,
@@ -52,6 +53,7 @@ export async function runTrialPipeline(
     input.operationPrefix ?? `trial:${input.runId}:${input.questionId}`;
 
   if (!stages.retrieval) {
+    await input.onStageStart?.("retrieval");
     const { vector, receipt } = await embedQuery({
       gateway: ports.gateway,
       vectorStore: ports.vectorStore,
@@ -81,6 +83,7 @@ export async function runTrialPipeline(
   let keptChunkIds: string[];
 
   if (!stages.rerank && input.rerankModel) {
+    await input.onStageStart?.("rerank");
     const chunkMap = await ports.vectorStore.getChunksByIds(stages.retrieval!.chunkIds);
     const docs = stages.retrieval!.chunkIds.map((id) => chunkMap.get(id)?.content ?? "");
     const { stage, keptChunkIds: kept } = await rerankCandidates({
@@ -111,6 +114,7 @@ export async function runTrialPipeline(
   let answer = input.existingAnswer ?? "";
 
   if (!stages.generation) {
+    await input.onStageStart?.("generation");
     const chunkMap = await ports.vectorStore.getChunksByIds(keptChunkIds);
     const gen = await generateAnswer({
       gateway: ports.gateway,
@@ -130,6 +134,7 @@ export async function runTrialPipeline(
   }
 
   if (!stages.judge) {
+    await input.onStageStart?.("judge");
     const chunkMap = await ports.vectorStore.getChunksByIds(
       stages.generation?.contextChunkIds ?? keptChunkIds
     );

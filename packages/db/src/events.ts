@@ -6,8 +6,10 @@ export type RunEventType =
   | "run.status"
   | "doc.ingested"
   | "embed.batch"
+  | "trial.stage.started"
   | "trial.stage"
   | "trial.retry"
+  | "trial.failed"
   | "chaos.injected"
   | "budget.tripped"
   /** The run finished with some trials unscored; the grid shows which. */

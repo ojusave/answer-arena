@@ -1,10 +1,14 @@
-import { Collapse, Stack, Text, UnstyledButton } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { Badge, Group, Stack, Text } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { COPY } from "../../lib/copy";
-import { eventTone, formatActivityLine, type SetupLabels } from "../../lib/format-event";
+import {
+  buildExecutionTimeline,
+  formatDuration,
+  spanPosition,
+  type SetupLabels,
+} from "../../lib/execution-timeline";
 
 type EventRow = {
   id: number;
@@ -14,32 +18,40 @@ type EventRow = {
 };
 
 const TERMINAL = new Set(["complete", "failed", "canceled", "budget_exceeded"]);
-const VISIBLE_LINES = 20;
+function statusColor(status: string): string {
+  if (status === "complete") return "green";
+  if (status === "failed") return "red";
+  if (status === "running") return "renderPurple";
+  return "gray";
+}
 
-function formatTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return "";
-  }
+function useLiveNow(active: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [active]);
+  return now;
 }
 
 export default function RunTimeline({
   runId,
   runStatus,
   setups,
+  startedAt,
+  finishedAt,
 }: {
   runId: string | null;
   runStatus: string;
   setups: SetupLabels;
+  startedAt?: string | null;
+  finishedAt?: string | null;
 }) {
-  const [open, { toggle }] = useDisclosure(true);
   const [events, setEvents] = useState<EventRow[]>([]);
   const cursorRef = useRef(0);
+  const active = !TERMINAL.has(runStatus);
+  const nowMs = useLiveNow(active);
 
   useEffect(() => {
     setEvents([]);
@@ -64,64 +76,156 @@ export default function RunTimeline({
       return rows;
     },
     enabled: Boolean(runId),
-    refetchInterval: TERMINAL.has(runStatus) ? false : 2000,
+    refetchInterval: active ? 2000 : false,
   });
 
-  const lines = useMemo(
+  const timeline = useMemo(
     () =>
-      [...events]
-        .reverse()
-        .slice(0, VISIBLE_LINES)
-        .map((e) => ({
-          id: e.id,
-          time: formatTime(e.at),
-          text: formatActivityLine(e, setups),
-          tone: eventTone(e),
-        })),
-    [events, setups]
+      buildExecutionTimeline({
+        events,
+        setups,
+        nowMs,
+        runStartedAt: startedAt,
+        runFinishedAt: finishedAt,
+        runStatus,
+      }),
+    [events, setups, nowMs, startedAt, finishedAt, runStatus]
   );
 
   return (
-    <Stack gap="sm" className="run-timeline pg-arena-card pg-arena-card--subtle">
-      <UnstyledButton className="arena-feed-toggle" onClick={toggle} aria-expanded={open}>
-        <Text className="pg-section-title">{COPY.app.eventLog}</Text>
-        <Text size="xs" c="dimmed">
-          {open ? "Hide" : "Show"} ({COPY.events.count(lines.length, events.length)})
+    <Stack gap="md" className="execution-timeline pg-arena-card pg-arena-card--subtle">
+      <Group justify="space-between" align="flex-start" gap="sm">
+        <Stack gap={2}>
+          <Text className="pg-section-title">{COPY.app.executionTimeline}</Text>
+          <Text size="xs" c="dimmed">
+            {COPY.app.executionTimelineHint}
+          </Text>
+        </Stack>
+        <Text size="xs" ff="monospace" c="dimmed">
+          {active ? "LIVE · " : ""}
+          {formatDuration(timeline.durationMs)}
         </Text>
-      </UnstyledButton>
+      </Group>
 
-      <Collapse in={open}>
-        {!runId ? (
-          <Text size="sm" c="dimmed">
-            No run yet.
-          </Text>
-        ) : lines.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            Waiting for updates…
-          </Text>
-        ) : (
-          <Stack gap={6}>
-            <Text size="xs" c="dimmed">
-              {COPY.app.eventLogHint}
+      <Group gap="md" className="execution-timeline__legend" aria-label="Stage legend">
+        {["retrieval", "rerank", "generation", "judge"].map((stage) => (
+          <span key={stage} className={`execution-legend execution-legend--${stage}`}>
+            <span aria-hidden="true" />
+            {stage === "retrieval" ? "Retrieve" : stage[0]!.toUpperCase() + stage.slice(1)}
+          </span>
+        ))}
+      </Group>
+
+      <div className="execution-timeline__chart">
+        <div className="execution-timeline__axis" aria-hidden="true">
+          {[0, 25, 50, 75, 100].map((tick) => (
+            <span
+              key={tick}
+              style={{
+                left: `calc(var(--execution-label-w) + 0.8rem + (100% - var(--execution-label-w) - 0.8rem) * ${tick / 100})`,
+              }}
+            >
+              {formatDuration((timeline.durationMs * tick) / 100)}
+            </span>
+          ))}
+        </div>
+
+        <div className="execution-row execution-row--summary">
+          <div className="execution-row__label">
+            <Text size="xs" fw={600}>
+              Comparison
             </Text>
-            <Stack gap={6} className="arena-feed">
-              {lines.map((line) => (
-                <div key={line.id} className={`arena-feed-row arena-feed-row--${line.tone}`}>
-                  <span className="arena-feed-dot" aria-hidden="true" />
-                  <Stack gap={2} className="arena-feed-copy">
-                    <Text size="sm" fw={500} lh={1.35}>
-                      {line.text}
-                    </Text>
-                    <Text size="xs" c="dimmed" ff="monospace">
-                      {line.time}
-                    </Text>
-                  </Stack>
-                </div>
+            <Text size="xs" c="dimmed" ff="monospace">
+              workflow
+            </Text>
+          </div>
+          <div
+            className="execution-row__track"
+            role="img"
+            aria-label={`Comparison workflow: ${runStatus}`}
+          >
+            {[0, 25, 50, 75, 100].map((tick) => (
+              <span
+                key={tick}
+                className="execution-row__gridline"
+                style={{ left: `${tick}%` }}
+                aria-hidden="true"
+              />
+            ))}
+            {timeline.summarySpans.map((span) => {
+              const position = spanPosition(span, timeline);
+              const title = `${span.label} · ${formatDuration(span.latencyMs)} · ${span.status}`;
+              return (
+                <span
+                  key={span.key}
+                  className={`execution-span execution-span--${span.stage} execution-span--${span.status}`}
+                  style={{ left: `${position.left}%`, width: `${position.width}%` }}
+                  title={title}
+                  aria-label={title}
+                >
+                  {position.width >= 12 ? span.label : ""}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
+        {timeline.rows.map((row) => (
+          <div className="execution-row" key={row.trialId}>
+            <div className="execution-row__label">
+              <Text size="xs" fw={600} lineClamp={1} title={row.label}>
+                {row.label}
+              </Text>
+              <Group gap={5} wrap="nowrap">
+                <Badge color={statusColor(row.status)} variant="light" size="xs">
+                  {row.status}
+                </Badge>
+                {row.retries > 0 && (
+                  <Text size="xs" c="orange" ff="monospace">
+                    retry {row.retries}
+                  </Text>
+                )}
+              </Group>
+            </div>
+
+            <div
+              className="execution-row__track"
+              role="img"
+              aria-label={`${row.label}: ${row.status}, attempt ${row.attempt}`}
+            >
+              {[0, 25, 50, 75, 100].map((tick) => (
+                <span
+                  key={tick}
+                  className="execution-row__gridline"
+                  style={{ left: `${tick}%` }}
+                  aria-hidden="true"
+                />
               ))}
-            </Stack>
-          </Stack>
+              {row.spans.map((span) => {
+                const position = spanPosition(span, timeline);
+                const title = `${span.label} · attempt ${span.attempt} · ${formatDuration(span.latencyMs)} · ${span.status}`;
+                return (
+                  <span
+                    key={span.key}
+                    className={`execution-span execution-span--${span.stage} execution-span--${span.status}`}
+                    style={{ left: `${position.left}%`, width: `${position.width}%` }}
+                    title={title}
+                    aria-label={title}
+                  >
+                    {position.width >= 12 ? span.label : ""}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {timeline.rows.length === 0 && (
+          <Text size="sm" c="dimmed" py="sm">
+            Waiting for setup tasks…
+          </Text>
         )}
-      </Collapse>
+      </div>
     </Stack>
   );
 }

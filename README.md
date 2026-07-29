@@ -26,7 +26,7 @@ The interesting part is not the leaderboard itself. It is seeing *why* two setup
 
 1. Open the [live demo](https://ragtime-web.onrender.com/) or your own deploy. The SciFact demo library seeds itself on first load.
 2. Pick a sample question (or write your own) and compose setups in **Configure**.
-3. Click **Run**. Answers appear side by side in **Compare**; the event log names the setup behind each stage.
+3. Click **Run**. Answers appear side by side in **Compare**; the live execution timeline shows stage duration, concurrency, retries, and failures for each setup.
 4. Select an answer to open **Inspect**: retrieved passages, stage receipts, and judge dimensions.
 
 ![Configure question and setups](static/images/configure.png)
@@ -161,7 +161,7 @@ ragtime/
 | `429` with "running N comparisons already" | The deployment hit `MAX_ACTIVE_RUNS_TOTAL`. Retry shortly, or raise it if your Postgres plan and provider quota allow |
 | Empty model pickers | `OPENROUTER_API_KEY` on the web service; check `/api/models` |
 
-Logs: web service and Workflow service logs in the Render Dashboard. Trial stage events also appear in the in-app event log.
+Logs: web service and Workflow service logs in the Render Dashboard. The app turns trial lifecycle events into the live execution timeline.
 
 ## Tests
 
