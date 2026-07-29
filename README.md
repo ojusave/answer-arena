@@ -10,6 +10,7 @@ Compare embedding, rerank, and generation models on the same corpus and question
 
 - **One OpenRouter key** covers embeddings, optional rerank, chat, and judging, with per-stage cost and latency receipts
 - **Render Workflows fan-out** runs setups in parallel with retries and lease-based trial claiming
+- **Live execution timeline** shows retrieve / rerank / generation / judge as Gantt-style bars per setup, including concurrency, retries, and failures
 - **Resumable stages**: completed retrieval / generation / judge work is checkpointed so retries skip what already finished
 - **Per-run budget ceiling** via pre-call reservations and an idempotent cost ledger (`MAX_RUN_BUDGET_USD`, default $5)
 - **Shared-deployment safe**: runs are session-scoped, and admission limits cap how many run at once per session and in total
@@ -18,9 +19,9 @@ Compare embedding, rerank, and generation models on the same corpus and question
 
 ## Overview
 
-RAGtime is a bake-off template for RAG pipelines. You load a corpus (the demo seeds 100 SciFact medical abstracts automatically), compose one or more setups (embedding + optional rerank + generation), and run them against the same question. The web service starts a `run_bakeoff` workflow; each trial claims a lease, walks retrieve → optional rerank → generate → judge, and streams stage events back into the UI.
+RAGtime is a bake-off template for RAG pipelines. You load a corpus (the demo seeds 100 SciFact medical abstracts automatically), compose one or more setups (embedding + optional rerank + generation), and run them against the same question. The web service starts a `run_bakeoff` workflow; each trial claims a lease, walks retrieve → optional rerank → generate → judge, and streams stage events into a live execution timeline in **Compare**.
 
-The interesting part is not the leaderboard itself. It is seeing *why* two setups diverge: which passages each one retrieved, what the judge scored, and how much each stage cost.
+The interesting part is not the leaderboard itself. It is seeing *why* two setups diverge: which passages each one retrieved, what the judge scored, how long each stage took side by side, and how much each stage cost.
 
 ## Usage
 
@@ -29,9 +30,9 @@ The interesting part is not the leaderboard itself. It is seeing *why* two setup
 3. Click **Run**. Answers appear side by side in **Compare**; the live execution timeline shows stage duration, concurrency, retries, and failures for each setup.
 4. Select an answer to open **Inspect**: retrieved passages, stage receipts, and judge dimensions.
 
-![Configure question and setups](static/images/configure.png)
+![Configure question and setups before a run](static/images/configure.png)
 
-![Inspect retrieved passages and judge score for a selected setup](static/images/inspect.png)
+![Inspect passages and judge score beside the live execution timeline](static/images/inspect.png)
 
 ## Deploy on Render
 
@@ -169,7 +170,7 @@ Logs: web service and Workflow service logs in the Render Dashboard. The app tur
 pnpm test
 ```
 
-Builds workspace packages, then runs core / db / gateway / web unit tests (including event-log formatting).
+Builds workspace packages, then runs core / db / gateway / web unit tests (including execution-timeline builders).
 
 ## Contributing
 
