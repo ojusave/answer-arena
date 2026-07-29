@@ -12,7 +12,7 @@ import {
   safePersistedError,
 } from "@ragtime/core";
 import { getDb, schema } from "@ragtime/db";
-import { wirePorts } from "./wiring.js";
+import { createPipelinePorts } from "@ragtime/composition";
 import { asSessionRequest } from "./types.js";
 
 export const inspectConfigSchema = z.object({
@@ -104,7 +104,7 @@ export function registerInspectRoutes(app: FastifyInstance) {
       reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     };
 
-    const ports = wirePorts();
+    const ports = createPipelinePorts();
     const cfg = session.config;
     let totalCost = 0;
     let totalLatency = 0;

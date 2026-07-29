@@ -70,6 +70,8 @@ export default function AnswerCards({ combos, grid, selectedTrialId, onSelect }:
               type="button"
               className={`answer-card${selected ? " answer-card--selected" : ""}`}
               disabled={!cell}
+              aria-pressed={selected}
+              aria-label={`${models.answer} setup, ${statusLabel}${score == null ? "" : `, score ${score} out of 100`}`}
               onClick={() => cell && onSelect(cell.trialId)}
             >
               <Group gap={6} wrap="wrap" className="answer-card-models">

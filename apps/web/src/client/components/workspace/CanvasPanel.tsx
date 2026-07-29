@@ -103,29 +103,30 @@ export default function CanvasPanel({
             />
           )}
 
+          {isComplete && (
+            <ResultsPanel runName={run.run.name} combos={run.comboResults} />
+          )}
+
           <RunTimeline runId={runId} runStatus={run.run.status} />
         </>
       )}
 
       {run && isComplete && (
-        <>
-          <ResultsPanel runName={run.run.name} combos={run.comboResults} />
-          <Group gap="sm">
-            {canEscalate && (
-              <Button
-                type="button"
-                variant="filled"
-                onClick={onEscalate}
-                loading={escalating}
-              >
-                {COPY.app.escalateButton(totalQuestionCount)}
-              </Button>
-            )}
-            <Button type="button" variant="light" onClick={onRunAgain} w="fit-content">
-              {COPY.app.runAgain}
+        <Group gap="sm">
+          {canEscalate && (
+            <Button
+              type="button"
+              variant="filled"
+              onClick={onEscalate}
+              loading={escalating}
+            >
+              {COPY.app.escalateButton(totalQuestionCount)}
             </Button>
-          </Group>
-        </>
+          )}
+          <Button type="button" variant="light" onClick={onRunAgain} w="fit-content">
+            {COPY.app.runAgain}
+          </Button>
+        </Group>
       )}
     </Stack>
   );

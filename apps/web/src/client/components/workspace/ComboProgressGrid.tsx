@@ -13,7 +13,7 @@ type Props = {
 };
 
 function comboStatus(cells: GridCell[]): { label: string; color: string } {
-  if (cells.some((c) => c.status === "running")) return { label: "Running", color: "indigo" };
+  if (cells.some((c) => c.status === "running")) return { label: "Running", color: "renderPurple" };
   if (cells.length > 0 && cells.every((c) => c.status === "complete"))
     return { label: "Complete", color: "green" };
   if (cells.some((c) => c.status === "failed")) return { label: "Some failed", color: "red" };
@@ -63,6 +63,14 @@ export default function ComboProgressGrid({ combos, grid, selectedTrialId, onSel
               <Table.Tr
                 key={combo.comboId}
                 onClick={() => firstTrial && onSelect(firstTrial)}
+                onKeyDown={(event) => {
+                  if (firstTrial && (event.key === "Enter" || event.key === " ")) {
+                    event.preventDefault();
+                    onSelect(firstTrial);
+                  }
+                }}
+                tabIndex={firstTrial ? 0 : undefined}
+                aria-selected={selected}
                 style={{
                   cursor: firstTrial ? "pointer" : "default",
                   background: selected ? "var(--pg-accent-soft)" : undefined,

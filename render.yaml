@@ -28,6 +28,10 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: OPENROUTER_APP_TITLE
         value: RAGtime
+      - key: MODEL_GATEWAY
+        value: openrouter
+      - key: WORKFLOW_DISPATCHER
+        value: render
       - key: JUDGE_MODEL
         sync: false
       - key: WORKFLOW_SLUG

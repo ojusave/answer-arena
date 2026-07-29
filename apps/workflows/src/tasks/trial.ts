@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { task } from "@renderinc/sdk/workflows";
 import { and, eq, inArray } from "drizzle-orm";
+import {
+  createPipelinePorts,
+  defineWorkflowTask,
+} from "@ragtime/composition";
 import {
   getAppConfig,
   runTrialPipeline,
@@ -17,24 +20,23 @@ import {
   getRunStatus,
   schema,
 } from "@ragtime/db";
-import { wirePorts } from "../wiring.js";
 import { maybeChaos, ChaosError } from "../lib/chaos.js";
 
 const { runs, trials, questions, combos } = schema;
 export const TRIAL_LEASE_MS = 300_000;
 export const MAX_TRIAL_ATTEMPTS = 4;
 
-export const runTrial = task(
+export const runTrial = defineWorkflowTask(
   {
     name: "run_trial",
-    plan: "standard",
+    compute: "standard",
     timeoutSeconds: 300,
     retry: { maxRetries: 3, waitDurationMs: 5000, backoffScaling: 2 },
   },
   async function runTrial(trialId: string): Promise<{ score: number | null }> {
     maybeChaos();
     const db = getDb();
-    const ports = wirePorts();
+    const ports = createPipelinePorts();
 
     const initial = await db.query.trials.findFirst({
       where: eq(trials.id, trialId),

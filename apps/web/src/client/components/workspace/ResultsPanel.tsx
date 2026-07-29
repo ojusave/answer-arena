@@ -32,7 +32,7 @@ export default function ResultsPanel({
   const scatterSeries = [
     {
       name: "Setups",
-      color: "indigo.6",
+      color: "renderPurple.6",
       data: sorted
         .filter((combo) => combo.avgCostPerQuestion != null && combo.avgScore != null)
         .map((combo) => ({
@@ -46,11 +46,11 @@ export default function ResultsPanel({
   if (!sorted.length) return null;
 
   return (
-    <Card withBorder p="md" className="results-panel">
+    <Card withBorder p="md" className="results-panel pg-arena-card">
       <Group justify="space-between" align="flex-start" mb="md">
         <Stack gap={2}>
-          <Text className="pg-section-title">Post-run analysis</Text>
-          <Text size="sm" fw={650}>Compare quality, model choice, cost, and speed at a glance.</Text>
+          <Text className="pg-section-title">Ranked results</Text>
+          <Text size="sm" fw={500}>Judge score, model choice, cost, and generation latency.</Text>
         </Stack>
         <Button
           variant="light"
@@ -68,7 +68,7 @@ export default function ResultsPanel({
           )}
         </Tabs.List>
         <Tabs.Panel value="table">
-          <Table.ScrollContainer minWidth={900}>
+          <Table.ScrollContainer minWidth={760}>
             <Table striped highlightOnHover verticalSpacing="sm">
               <Table.Thead>
                 <Table.Tr>

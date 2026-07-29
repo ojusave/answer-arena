@@ -55,3 +55,22 @@ export class CostOperationError extends Error {
     super(message);
   }
 }
+
+export type WorkflowDispatchErrorCode =
+  | "workflow_auth"
+  | "workflow_not_found"
+  | "workflow_unavailable";
+
+/** Vendor-neutral workflow start failure returned by dispatcher adapters. */
+export class WorkflowDispatchError extends Error {
+  override readonly name = "WorkflowDispatchError";
+
+  constructor(
+    readonly code: WorkflowDispatchErrorCode,
+    message: string,
+    readonly detail: string,
+    readonly statusCode?: number
+  ) {
+    super(message);
+  }
+}

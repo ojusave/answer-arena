@@ -64,6 +64,11 @@ export default function WorkspacePage() {
     if (sample) setPrompt(sample.text);
   }
 
+  function handleTrialSelect(trialId: string) {
+    workspace.setSelectedTrialId(trialId);
+    if (mobile) setMobileTab("details");
+  }
+
   async function handleRun() {
     if (!demo?.corpusId || !prompt.trim()) return;
 
@@ -179,7 +184,7 @@ export default function WorkspacePage() {
       onCancel={() => workspace.cancel.mutate()}
       canceling={workspace.cancel.isPending}
       onRunAgain={workspace.reset}
-      onSelectTrial={workspace.setSelectedTrialId}
+      onSelectTrial={handleTrialSelect}
       selectedTrialId={workspace.selectedTrialId}
       totalQuestionCount={demo.questionCount}
       onEscalate={openEscalate}

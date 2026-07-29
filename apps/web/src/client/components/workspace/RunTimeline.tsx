@@ -91,7 +91,7 @@ export default function RunTimeline({
 
   return (
     <Stack gap="sm" className="run-timeline pg-arena-card pg-arena-card--subtle">
-      <UnstyledButton className="arena-feed-toggle" onClick={toggle}>
+      <UnstyledButton className="arena-feed-toggle" onClick={toggle} aria-expanded={open}>
         <Text className="pg-section-title">{COPY.app.eventLog}</Text>
         <Text size="xs" c="dimmed">
           {open ? "Hide" : "Show"} ({lines.length})
