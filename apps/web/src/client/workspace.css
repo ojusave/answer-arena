@@ -85,6 +85,17 @@
   cursor: text;
 }
 
+.inspector-setup-header {
+  display: grid;
+  gap: 0.3rem;
+  padding-bottom: 0.1rem;
+}
+
+.inspector-setup-models {
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
 .inspector-score-card {
   padding: 0.8rem;
   border: 1px solid var(--score-current-border);
