@@ -124,6 +124,8 @@ export default function CanvasPanel({
             runId={runId}
             runStatus={run.run.status}
             setups={setupLabels}
+            startedAt={run.run.startedAt}
+            finishedAt={run.run.finishedAt}
           />
         </>
       )}

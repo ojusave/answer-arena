@@ -12,6 +12,7 @@ import {
 } from "@ragtime/core";
 import {
   BudgetReservationError,
+  appendRunEvent,
   claimTrial,
   checkpointTrialStage,
   createRunCostController,
@@ -107,7 +108,7 @@ export const runTrial = defineWorkflowTask(
     }
 
     if (claimed.attempts > 1) {
-      emitEvent(
+      await appendRunEvent(
         db,
         claimed.runId,
         "trial.retry",
@@ -146,6 +147,15 @@ export const runTrial = defineWorkflowTask(
         existingAnswer: claimed.answer,
         costController,
         operationPrefix: `trial:${trialId}`,
+        onStageStart: async (stage) => {
+          await appendRunEvent(
+            db,
+            claimed.runId,
+            "trial.stage.started",
+            { trialId, stage, attempt: claimed.attempts },
+            trialId
+          );
+        },
         onStageComplete: async (stage, value, answer) => {
           const saved = await checkpointTrialStage({
             db,
@@ -157,11 +167,11 @@ export const runTrial = defineWorkflowTask(
             leaseMs: TRIAL_LEASE_MS,
           });
           if (!saved) throw new Error(`Trial claim lost: ${trialId}`);
-          emitEvent(
+          await appendRunEvent(
             db,
             claimed.runId,
             "trial.stage",
-            { trialId, stage, data: value },
+            { trialId, stage, attempt: claimed.attempts, data: value },
             trialId
           );
         },
@@ -223,6 +233,13 @@ export const runTrial = defineWorkflowTask(
             eq(trials.status, "running")
           )
         );
+      await appendRunEvent(
+        db,
+        claimed.runId,
+        "trial.failed",
+        { trialId, attempt: claimed.attempts, message },
+        trialId
+      );
       throw err;
     }
   }
