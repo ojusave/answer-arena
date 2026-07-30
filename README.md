@@ -18,18 +18,6 @@ A playground to compare search + answer setups side by side. Pick embedding, opt
   <a href="https://github.com/ojusave/answer-arena">GitHub</a>
 </p>
 
-<p>
-  <a href="https://render.com">
-    <img src="https://img.shields.io/badge/Render-Workflows-6c63ff?logo=render&logoColor=white" alt="Render Workflows" />
-  </a>
-  <a href="https://openrouter.ai">
-    <img src="https://img.shields.io/badge/OpenRouter-Models-black?logoColor=white" alt="OpenRouter" />
-  </a>
-  <a href="https://render.com/docs/databases">
-    <img src="https://img.shields.io/badge/Render-Postgres%20%2B%20pgvector-46E3B7?logo=postgresql&logoColor=white" alt="Render Postgres" />
-  </a>
-</p>
-
 </div>
 
 ## What This Demo Shows
