@@ -4,6 +4,8 @@
 
 A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
 
+**Live demo:** [https://ragtime-web.onrender.com/](https://ragtime-web.onrender.com/)
+
 <p>
   <a href="https://render.com/deploy?repo=https://github.com/render-examples/answer-arena">
     <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
@@ -11,6 +13,9 @@ A playground to compare search + answer setups side by side. Pick embedding, opt
 </p>
 
 <p>
+  <a href="https://ragtime-web.onrender.com/">
+    <img src="https://img.shields.io/badge/Live-Demo-46E3B7?logo=render&logoColor=white" alt="Live Demo" />
+  </a>
   <a href="https://render.com/docs/workflows">
     <img src="https://img.shields.io/badge/Render-Workflows-6c63ff?logo=render&logoColor=white" alt="Render Workflows" />
   </a>
@@ -98,7 +103,7 @@ Select an answer to see retrieved passages, stage receipts, and judge dimensions
    - Same region as the web service and Postgres
    - Slug should match `WORKFLOW_SLUG` (Blueprint default: `ragtime-workflows`)
    - Wire `DATABASE_URL`, `OPENROUTER_API_KEY`, `JUDGE_MODEL`, and `APP_URL`
-4. Open the web service URL (live demo: https://ragtime-web.onrender.com/), load the demo library, compose two setups, and click **Run**
+4. Open your web service URL (or try the [live demo](https://ragtime-web.onrender.com/)), load the demo library, compose two setups, and click **Run**
 
 A small smoke run with budget-tier models usually lands in low single-digit USD, always bounded by `MAX_RUN_BUDGET_USD` (default `$5`).
 
@@ -173,14 +178,20 @@ Builds workspace packages, then runs core / db / gateway / web unit tests. Set `
 
 ## Learn More
 
+**This example:**
+- [Live demo](https://ragtime-web.onrender.com/)
+- [GitHub: render-examples/answer-arena](https://github.com/render-examples/answer-arena)
+
 **Render:**
 - [Render Workflows](https://render.com/docs/workflows)
 - [Render Postgres](https://render.com/docs/databases)
 - [Deploy to Render button](https://render.com/docs/deploy-to-render-button)
+- [Render Developers Discord](https://discord.gg/gvC7ceS9YS)
 
 **OpenRouter:**
 - [OpenRouter docs](https://openrouter.ai/docs)
 - [Activity / usage](https://openrouter.ai/activity)
+- [OpenRouter Discord](https://discord.gg/fVyRaUDgxW)
 
 ## Contributing
 
