@@ -2,7 +2,7 @@
 
 # Answer Arena
 
-A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
+A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable <a href="https://render.com/docs/workflows" target="_blank" rel="noopener noreferrer">Render Workflows</a> task and is scored by a shared judge model.
 
 **Live demo:** <a href="https://ragtime-web.onrender.com/" target="_blank" rel="noopener noreferrer">https://ragtime-web.onrender.com/</a>
 
@@ -38,10 +38,10 @@ This repo demonstrates how to run a multi-model RAG bake-off on Render:
 
 | Platform | Role |
 | --- | --- |
-| **[Render Workflows](https://render.com/docs/workflows)** | Fan-out durable tasks for ingest, embed, retrieve, generate, and judge with retries and leases |
-| **[OpenRouter](https://openrouter.ai)** | One API key for embeddings, optional rerank, chat, and the judge model |
-| **[Render Postgres](https://render.com/docs/databases)** | Corpus chunks, pgvector embeddings, runs, trials, and cost receipts |
-| **[Render Web Services](https://render.com/docs/web-services)** | Hosts the API and Compare / Configure / Inspect UI |
+| **<a href="https://render.com/docs/workflows" target="_blank" rel="noopener noreferrer">Render Workflows</a>** | Fan-out durable tasks for ingest, embed, retrieve, generate, and judge with retries and leases |
+| **<a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer">OpenRouter</a>** | One API key for embeddings, optional rerank, chat, and the judge model |
+| **<a href="https://render.com/docs/databases" target="_blank" rel="noopener noreferrer">Render Postgres</a>** | Corpus chunks, pgvector embeddings, runs, trials, and cost receipts |
+| **<a href="https://render.com/docs/web-services" target="_blank" rel="noopener noreferrer">Render Web Services</a>** | Hosts the API and Compare / Configure / Inspect UI |
 
 ## Product tour
 
@@ -84,9 +84,9 @@ Select an answer to see retrieved passages, stage receipts, and judge dimensions
 
 ### Prerequisites
 
-- [Render account](https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
-- [OpenRouter API key](https://openrouter.ai/keys)
-- [Render API key](https://render.com/docs/api#1-create-an-api-key) (to start and cancel workflow tasks)
+- <a href="https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link" target="_blank" rel="noopener noreferrer">Render account</a>
+- <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">OpenRouter API key</a>
+- <a href="https://render.com/docs/api#1-create-an-api-key" target="_blank" rel="noopener noreferrer">Render API key</a> (to start and cancel workflow tasks)
 
 ### Deploy
 
@@ -103,7 +103,7 @@ Select an answer to see retrieved passages, stage receipts, and judge dimensions
    - Same region as the web service and Postgres
    - Slug should match `WORKFLOW_SLUG` (Blueprint default: `ragtime-workflows`)
    - Wire `DATABASE_URL`, `OPENROUTER_API_KEY`, `JUDGE_MODEL`, and `APP_URL`
-4. Open your web service URL (or try the [live demo](https://ragtime-web.onrender.com/)), load the demo library, compose two setups, and click **Run**
+4. Open your web service URL (or try the <a href="https://ragtime-web.onrender.com/" target="_blank" rel="noopener noreferrer">live demo</a>), load the demo library, compose two setups, and click **Run**
 
 A small smoke run with budget-tier models usually lands in low single-digit USD, always bounded by `MAX_RUN_BUDGET_USD` (default `$5`).
 
