@@ -4,6 +4,8 @@
 
 A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
 
+<p><a href="https://render.com/docs/workflows"><img src="https://img.shields.io/badge/Render_Workflows-6C63FF?style=flat-square&logo=render&logoColor=white" alt="Render Workflows"></a>&nbsp;<a href="https://openrouter.ai"><img src="https://img.shields.io/badge/OpenRouter-Models-111111?style=flat-square" alt="OpenRouter Models"></a>&nbsp;<a href="https://render.com/docs/databases"><img src="https://img.shields.io/badge/Postgres_%2B_pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="Postgres and pgvector"></a></p>
+
 <p>
   <a href="https://render.com/deploy?repo=https://github.com/ojusave/answer-arena">
     <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
