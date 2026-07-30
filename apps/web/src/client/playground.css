@@ -196,50 +196,6 @@
   background: var(--rag-surface);
 }
 
-.control-plan {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  border: 1px solid var(--rag-border);
-  background: color-mix(in srgb, var(--rag-surface) 88%, var(--mantine-color-gray-1));
-}
-
-[data-mantine-color-scheme="dark"] .control-plan {
-  background: color-mix(in srgb, var(--rag-surface) 88%, var(--rag-page));
-}
-
-.control-plan--warn {
-  border-color: color-mix(in srgb, var(--mantine-color-red-6) 45%, var(--rag-border));
-}
-
-.control-plan__cell {
-  display: grid;
-  gap: 0.15rem;
-  padding: 0.55rem 0.45rem;
-  text-align: center;
-  border-right: 1px solid var(--rag-border);
-}
-
-.control-plan__cell:last-child {
-  border-right: none;
-}
-
-.control-plan__label {
-  font-size: 0.62rem;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mantine-color-dimmed);
-}
-
-.control-plan__value {
-  font-size: 0.92rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--mantine-color-text);
-  line-height: 1.15;
-}
-
 .pg-arena-idle {
   display: flex;
   min-height: 280px;

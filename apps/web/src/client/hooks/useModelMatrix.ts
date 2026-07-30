@@ -48,10 +48,9 @@ export function useModelMatrix(questionCount: number) {
     return formatSetupSummary({
       setupCount: setups.length,
       questionCount,
-      budgetUsd: Number(budget) || 0,
       maxTrials,
     });
-  }, [setups, questionCount, budget, appConfig]);
+  }, [setups, questionCount, appConfig]);
 
   function addSetup() {
     setSetups((prev) => [...prev, blankSetup(catalog)]);

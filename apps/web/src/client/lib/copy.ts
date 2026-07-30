@@ -49,13 +49,8 @@ export function stageLabel(stage: string): string {
 }
 
 export type RunPlanSummary = {
-  setupCount: number;
-  questionCount: number;
   trialCount: number;
-  budgetUsd: number;
   overLimit: boolean;
-  /** Compact spoken form for aria-label / over-limit errors. */
-  line: string;
 };
 
 export function formatMatrixSummary(args: {
@@ -63,35 +58,26 @@ export function formatMatrixSummary(args: {
   rerankCount: number;
   genCount: number;
   questionCount: number;
-  budgetUsd: number;
   maxTrials: number;
 }): RunPlanSummary {
   const setupCount = args.embedCount * args.rerankCount * args.genCount;
   return formatSetupSummary({
     setupCount,
     questionCount: args.questionCount,
-    budgetUsd: args.budgetUsd,
     maxTrials: args.maxTrials,
   });
 }
 
-/** Summary for explicit-setup mode: one answer per setup per question. */
+/** Counts answers for explicit-setup mode and whether the run exceeds the trial cap. */
 export function formatSetupSummary(args: {
   setupCount: number;
   questionCount: number;
-  budgetUsd: number;
   maxTrials: number;
 }): RunPlanSummary {
   const trialCount = args.setupCount * args.questionCount;
-  const overLimit = trialCount > args.maxTrials;
-  const line = `${args.setupCount} setup${args.setupCount === 1 ? "" : "s"} × ${args.questionCount} question${args.questionCount === 1 ? "" : "s"} = ${trialCount} answer${trialCount === 1 ? "" : "s"}. Budget $${args.budgetUsd.toFixed(2)}.`;
   return {
-    setupCount: args.setupCount,
-    questionCount: args.questionCount,
     trialCount,
-    budgetUsd: args.budgetUsd,
-    overLimit,
-    line,
+    overLimit: trialCount > args.maxTrials,
   };
 }
 
@@ -234,10 +220,6 @@ export const COPY = {
     answerFailedReason: (reason: string) => `Reason: ${reason}`,
     answerEmpty: "No answer returned.",
     inspectorFailure: "Why this setup failed",
-    planSetups: "Setups",
-    planQuestions: "Questions",
-    planAnswers: "Answers",
-    planBudget: "Budget",
     planOverLimit: "Too many answers for one run. Remove a setup or pick fewer questions.",
     setups: "Setups",
     setupCount: (n: number) => `${n} setup${n === 1 ? "" : "s"}`,
