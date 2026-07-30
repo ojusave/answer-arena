@@ -5,7 +5,7 @@
 A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
 
 <p>
-  <a href="https://render.com/deploy?repo=https://github.com/ojusave/answer-arena">
+  <a href="https://render.com/deploy?repo=https://github.com/render-examples/answer-arena">
     <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
   </a>
 </p>
@@ -184,4 +184,4 @@ Builds workspace packages, then runs core / db / gateway / web unit tests. Set `
 
 ## Contributing
 
-Issues and PRs are welcome on [github.com/ojusave/answer-arena](https://github.com/ojusave/answer-arena). Keep changes small and focused; match existing module boundaries (`packages/composition` for wiring, `packages/core` for pipeline logic, `apps/workflows` for durable tasks).
+Issues and PRs are welcome on [github.com/render-examples/answer-arena](https://github.com/render-examples/answer-arena). Keep changes small and focused; match existing module boundaries (`packages/composition` for wiring, `packages/core` for pipeline logic, `apps/workflows` for durable tasks).
