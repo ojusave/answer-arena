@@ -1,18 +1,15 @@
 const MAX_PERSISTED_ERROR_LENGTH = 1000;
+const MAX_DETAIL_LENGTH = 400;
 
-/** Persist only errors explicitly produced as safe public messages. */
-export function safePersistedError(
-  error: unknown,
-  fallback = "Operation failed"
-): string {
-  const candidate =
-    error instanceof Error && error.name === "SafeUrlFetchError"
-      ? error.message
-      : fallback;
-  return candidate
-    .replace(/[\u0000-\u001f\u007f]/g, " ")
-    .slice(0, MAX_PERSISTED_ERROR_LENGTH);
-}
+/** Error names whose messages are safe to show and store (no secrets / vendor dumps). */
+const PUBLIC_ERROR_NAMES = new Set([
+  "SafeUrlFetchError",
+  "ProviderCallError",
+  "WorkflowDispatchError",
+  "CostOperationError",
+  "BudgetReservationError",
+  "ChaosError",
+]);
 
 /** Machine-readable classification for a provider failure. */
 export type ProviderErrorCode =
@@ -21,6 +18,120 @@ export type ProviderErrorCode =
   | "auth"
   | "invalid_model"
   | "provider_unavailable";
+
+/** Beginner-readable hint appended to the upstream text for each known code. */
+const PROVIDER_CODE_HINTS: Record<ProviderErrorCode, string> = {
+  insufficient_credits: "Add provider credits, then retry.",
+  rate_limited: "Wait a moment or run fewer setups.",
+  auth: "Check OPENROUTER_API_KEY.",
+  invalid_model: "Pick a different model.",
+  provider_unavailable: "Retry when the provider is available.",
+};
+
+/**
+ * Upstream bodies are echoed to operators, so drop anything token-shaped before
+ * it reaches the database, the UI, or logs.
+ */
+function redactSecrets(text: string): string {
+  return text
+    .replace(/\b(sk|rnd|key)[-_][A-Za-z0-9._-]{8,}/gi, "[redacted]")
+    .replace(/\bBearer\s+[A-Za-z0-9._-]{8,}/gi, "Bearer [redacted]")
+    .replace(/([?&](?:api[_-]?key|token|secret)=)[^&\s]+/gi, "$1[redacted]")
+    .replace(/\/\/[^/\s:@]+:[^/\s@]+@/g, "//[redacted]@");
+}
+
+function clean(text: string, maxLength: number): string {
+  return redactSecrets(text)
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}
+
+function uniqueParts(parts: Array<string | undefined>): string[] {
+  const result: string[] = [];
+  for (const part of parts) {
+    if (!part) continue;
+    const cleaned = clean(part, MAX_PERSISTED_ERROR_LENGTH);
+    if (!cleaned) continue;
+    const normalized = cleaned.toLocaleLowerCase();
+    if (
+      result.some((existing) => {
+        const current = existing.toLocaleLowerCase();
+        return current === normalized || current.includes(normalized);
+      })
+    ) {
+      continue;
+    }
+    result.push(cleaned);
+  }
+  return result;
+}
+
+/**
+ * Persist only errors explicitly produced as safe public messages.
+ * Provider and workflow failures keep the upstream text so an operator can tell
+ * a rate limit from a retired model slug. Unknown errors collapse to the
+ * fallback, so stack traces never land in the database or UI.
+ */
+export function safePersistedError(
+  error: unknown,
+  fallback = "Operation failed"
+): string {
+  if (error instanceof ProviderCallError) {
+    const hint = error.code ? PROVIDER_CODE_HINTS[error.code] : undefined;
+    const source = uniqueParts([error.message, error.detail]).join(": ");
+    return clean(
+      uniqueParts([source, hint]).join(" · "),
+      MAX_PERSISTED_ERROR_LENGTH
+    );
+  }
+  if (error instanceof WorkflowDispatchError) {
+    return clean(
+      uniqueParts([error.message, error.detail]).join(": "),
+      MAX_PERSISTED_ERROR_LENGTH
+    );
+  }
+  if (
+    error instanceof Error &&
+    PUBLIC_ERROR_NAMES.has(error.name) &&
+    error.message.trim() !== ""
+  ) {
+    return clean(error.message, MAX_PERSISTED_ERROR_LENGTH);
+  }
+  return clean(fallback, MAX_PERSISTED_ERROR_LENGTH);
+}
+
+/** Normalizes an upstream error body into a short, secret-free detail string. */
+export function providerErrorDetail(bodyText: string | undefined): string | undefined {
+  if (!bodyText || bodyText.trim() === "") return undefined;
+  let message: string | undefined;
+  try {
+    const parsed = JSON.parse(bodyText) as {
+      error?: { message?: unknown; metadata?: { raw?: unknown } } | string;
+      message?: unknown;
+    };
+    const candidate =
+      typeof parsed.error === "string"
+        ? parsed.error
+        : typeof parsed.error?.message === "string"
+          ? parsed.error.message
+          : typeof parsed.message === "string"
+            ? parsed.message
+            : undefined;
+    const raw = typeof parsed.error === "object" ? parsed.error?.metadata?.raw : undefined;
+    if (candidate) {
+      message = typeof raw === "string" ? `${candidate} (${raw})` : candidate;
+    }
+  } catch {
+    // Arbitrary text can echo prompts or HTML. Keep only structured provider
+    // error fields, which are useful without reflecting a whole response body.
+    return "Provider returned a non-JSON error response";
+  }
+  if (!message) return undefined;
+  const detail = clean(message, MAX_DETAIL_LENGTH);
+  return detail === "" ? undefined : detail;
+}
 
 /**
  * Provider failure annotated with whether the paid request may have executed.
@@ -37,7 +148,9 @@ export class ProviderCallError extends Error {
     /** Code-based classification so callers never string-match error text. */
     readonly code?: ProviderErrorCode,
     /** Adapter-supplied link that helps the user resolve this error. */
-    readonly helpUrl?: string
+    readonly helpUrl?: string,
+    /** Upstream message, kept so operators can debug the real cause. */
+    readonly detail?: string
   ) {
     super(message);
   }

@@ -111,7 +111,10 @@ test("keeps failed attempts visible beside a successful retry", () => {
         stage: "generation",
         attempt: 1,
       }),
-      event(2, 2, "trial.failed", { attempt: 1 }),
+      event(2, 2, "trial.failed", {
+        attempt: 1,
+        message: "OpenRouter HTTP 429: rate limit exceeded",
+      }),
       event(3, 3, "trial.retry", { attempt: 2 }),
       event(4, 3, "trial.stage.started", {
         stage: "generation",
@@ -135,6 +138,7 @@ test("keeps failed attempts visible beside a successful retry", () => {
   assert.equal(row.retries, 1);
   assert.equal(row.attempt, 2);
   assert.equal(row.status, "complete");
+  assert.equal(row.failureReason, "OpenRouter HTTP 429: rate limit exceeded");
   assert.deepEqual(
     row.spans.map(({ stage, attempt, status }) => ({ stage, attempt, status })),
     [

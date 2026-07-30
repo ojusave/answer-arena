@@ -1,165 +1,172 @@
+<div align="center">
+
 # Answer Arena
 
-Playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
+A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
 
-[Deploy to Render](https://render.com/deploy?repo=https://github.com/ojusave/answer-arena) · [Live demo](https://ragtime-web.onrender.com/) · [Workflows docs](https://render.com/docs/workflows)
+<p>
+  <a href="https://render.com/deploy?repo=https://github.com/ojusave/answer-arena">
+    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
+  </a>
+</p>
 
-![Answer Arena comparing two setups on the same question](static/images/compare.png)
+<p>
+  <a href="https://ragtime-web.onrender.com/">Live demo</a>
+  ·
+  <a href="https://render.com/docs/workflows">Workflows docs</a>
+  ·
+  <a href="https://github.com/ojusave/answer-arena">GitHub</a>
+</p>
 
-## Highlights
+<p>
+  <a href="https://render.com">
+    <img src="https://img.shields.io/badge/Render-Workflows-6c63ff?logo=render&logoColor=white" alt="Render Workflows" />
+  </a>
+  <a href="https://openrouter.ai">
+    <img src="https://img.shields.io/badge/OpenRouter-Models-black?logoColor=white" alt="OpenRouter" />
+  </a>
+  <a href="https://render.com/docs/databases">
+    <img src="https://img.shields.io/badge/Render-Postgres%20%2B%20pgvector-46E3B7?logo=postgresql&logoColor=white" alt="Render Postgres" />
+  </a>
+</p>
 
-- **One OpenRouter key** covers embeddings, optional rerank, chat, and judging, with per-stage cost and latency receipts
-- **Render Workflows fan-out** runs setups in parallel with retries and lease-based trial claiming
-- **Live execution timeline** shows retrieve / rerank / generation / judge as Gantt-style bars per setup, including concurrency, retries, and failures
-- **Resumable stages**: completed retrieval / generation / judge work is checkpointed so retries skip what already finished
-- **Per-run budget ceiling** via pre-call reservations and an idempotent cost ledger (`MAX_RUN_BUDGET_USD`, default $5)
-- **Shared-deployment safe**: runs are session-scoped, and admission limits cap how many run at once per session and in total
-- **Live model catalog** from the gateway: pickers are not hardcoded slugs
-- **Swap points** for the model gateway and workflow dispatcher through `packages/composition` (`MODEL_GATEWAY`, `WORKFLOW_DISPATCHER`)
+</div>
 
-## Overview
+## What This Demo Shows
 
-Answer Arena is a hosted bake-off for retrieval-augmented answer setups (often called RAG). You load a corpus (the demo seeds 100 SciFact medical abstracts automatically), compose one or more setups (embedding + optional rerank + generation), and run them against the same question. The web service starts a `run_bakeoff` workflow; each trial claims a lease, walks retrieve → optional rerank → generate → judge, and streams stage events into a live execution timeline in **Compare**.
+This repo demonstrates how to run a multi-model RAG bake-off on Render:
 
-The interesting part is not the leaderboard itself. It is seeing *why* two setups diverge: which passages each one retrieved, what the judge scored, how long each stage took side by side, and how much each stage cost.
+| Platform | Role |
+| --- | --- |
+| **[Render Workflows](https://render.com/docs/workflows)** | Fan-out durable tasks for ingest, embed, retrieve, generate, and judge with retries and leases |
+| **[OpenRouter](https://openrouter.ai)** | One API key for embeddings, optional rerank, chat, and the judge model |
+| **[Render Postgres](https://render.com/docs/databases)** | Corpus chunks, pgvector embeddings, runs, trials, and cost receipts |
+| **[Render Web Services](https://render.com/docs/web-services)** | Hosts the API and Compare / Configure / Inspect UI |
 
-## Usage
+## Product tour
 
-1. Open the [live demo](https://ragtime-web.onrender.com/) or your own deploy. The SciFact demo library seeds itself on first load.
-2. Pick a sample question (or write your own) and compose setups in **Configure**.
-3. Click **Run**. Answers appear side by side in **Compare**; the live execution timeline shows stage duration, concurrency, retries, and failures for each setup.
-4. Select an answer to open **Inspect**: retrieved passages, stage receipts, and judge dimensions.
+Configure setups, run them in parallel, then inspect evidence and scores. These are screenshots from the live deploy.
 
-![Configure question and setups before a run](static/images/configure.png)
+### Configure
 
-![Inspect passages and judge score beside the live execution timeline](static/images/inspect.png)
+Pick a question and compose one or more setups (embedding + optional rerank + generation).
 
-## Deploy on Render
+![Configure question and setups](static/images/configure.png)
 
-### 1. Blueprint (web + Postgres)
+### Compare
 
-Use the [Deploy to Render](https://render.com/deploy?repo=https://github.com/ojusave/answer-arena) button, or create a Blueprint from [`render.yaml`](render.yaml). That provisions:
+Answers appear side by side. The live execution timeline shows retrieve / rerank / generation / judge as clock-time bars, including retries and failures.
 
-| Resource | Name | Role |
-|----------|------|------|
-| Web Service | `ragtime-web` | SPA + API, health check at `/healthz`, `preDeployCommand: pnpm db:migrate` |
-| Postgres 16 | `ragtime-db` | Chunks, pgvector embeddings, runs, trials, events |
+![Compare answers and live execution timeline](static/images/compare.png)
 
-### 2. Workflow service (manual)
+### Inspect
 
-Blueprints do not create Workflow services yet. In the Dashboard:
+Select an answer to see retrieved passages, stage receipts, and judge dimensions. Failed setups show the provider reason after retries.
 
-1. **New → Workflow**
-2. Same repo, **root directory** empty (pnpm workspace needs the repo root)
-3. **Build**: `pnpm install && pnpm build:workflows`
-4. **Start**: `node apps/workflows/dist/index.js`
-5. Same **region** as the web service and database (private networking)
-6. Note the **Workflow Slug** and set `WORKFLOW_SLUG` on the web service to match (Blueprint default: `ragtime-workflows`)
+![Inspect passages and judge score](static/images/inspect.png)
 
-### 3. Secrets
+### How a comparison runs
 
-| Variable | Where | Purpose |
-|----------|-------|---------|
-| `OPENROUTER_API_KEY` | Web + Workflow | Model calls (web also uses it for the models proxy) |
-| `RENDER_API_KEY` | Web | Start and cancel workflow tasks |
-| `JUDGE_MODEL` | Web + Workflow | Default judge chat slug; runs are rejected without a judge |
-| `WORKFLOW_SLUG` | Web | Must match the Dashboard workflow slug |
-| `DATABASE_URL` | Workflow | Internal URL from `ragtime-db` (Blueprint wires this on the web service) |
-| `APP_URL` | Workflow | Public web URL for OpenRouter `HTTP-Referer` (Blueprint sets this on the web service from `RENDER_EXTERNAL_URL`) |
+1. **Browser** starts a run from Configure
+2. **Web service** admits the run, persists the plan, and dispatches `run_bakeoff`
+3. **Render Workflows** executes the pipeline:
 
-### 4. Open the app
+| Workflow task | What it does |
+| --- | --- |
+| `ingest_document` / corpus prep | Chunks demo or uploaded text into Postgres |
+| `embed_batch` | Embeds missing chunks per embedding model into pgvector |
+| `run_trial` | Retrieve → optional rerank → generate → judge for one setup × question |
+| `run_bakeoff` | Orchestrates fan-out, aggregation, and run status |
 
-Visit the web service URL. Demo data seeds through the UI. Compose a small comparison (two setups, one question) and click **Run**.
+4. Stage events stream into Compare so you can watch concurrency, retries, and cost as they happen
 
-A suggested-matrix smoke with budget-tier models usually lands in low single-digit USD, always bounded by `MAX_RUN_BUDGET_USD`. Cross-check summed stage costs against your [OpenRouter activity](https://openrouter.ai/activity) for the run window.
+## Quick Start
+
+### Prerequisites
+
+- [Render account](https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
+- [OpenRouter API key](https://openrouter.ai/keys)
+- [Render API key](https://render.com/docs/api#1-create-an-api-key) (to start and cancel workflow tasks)
+
+### Deploy
+
+1. Click **Deploy to Render** above (or create a Blueprint from [`render.yaml`](render.yaml))
+2. Set secrets when prompted:
+   - `OPENROUTER_API_KEY`
+   - `RENDER_API_KEY`
+   - `JUDGE_MODEL` (any chat slug you can call, e.g. `openai/gpt-4o-mini`)
+3. Create the Workflow service manually (Blueprints do not create Workflows yet):
+   - Dashboard → **New** → **Workflow**
+   - Same repo, root directory empty (pnpm workspace needs the repo root)
+   - Build: `pnpm install && pnpm build:workflows`
+   - Start: `node apps/workflows/dist/index.js`
+   - Same region as the web service and Postgres
+   - Slug should match `WORKFLOW_SLUG` (Blueprint default: `ragtime-workflows`)
+   - Wire `DATABASE_URL`, `OPENROUTER_API_KEY`, `JUDGE_MODEL`, and `APP_URL`
+4. Open the web service URL (live demo: https://ragtime-web.onrender.com/), load the demo library, compose two setups, and click **Run**
+
+A small smoke run with budget-tier models usually lands in low single-digit USD, always bounded by `MAX_RUN_BUDGET_USD` (default `$5`).
+
+## Features
+
+| Feature | Description |
+| --- | --- |
+| **Side-by-side setups** | Compare embedding / rerank / generation stacks on the same question |
+| **Live execution timeline** | Gantt-style bars for retrieve, rerank, generation, and judge |
+| **Provider failure reasons** | After workflow retries, failed setups show the OpenRouter / dispatcher message |
+| **Resumable stages** | Completed retrieve / generate / judge work is checkpointed so retries skip finished work |
+| **Per-run budget** | Pre-call reservations and an idempotent cost ledger |
+| **Shared-deploy safe** | Session-scoped runs with admission limits per session and deployment-wide |
+| **Live model catalog** | Pickers come from OpenRouter; no hardcoded model slug list |
 
 ## Configuration
 
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `DATABASE_URL` | (required) | Postgres with pgvector |
-| `OPENROUTER_API_KEY` | (required for real models) | Bearer token |
-| `RENDER_API_KEY` | (required on web) | Workflow triggers |
-| `APP_URL` | from `RENDER_EXTERNAL_URL` on web | OpenRouter attribution |
-| `OPENROUTER_APP_TITLE` | `Answer Arena` | `X-OpenRouter-Title` |
-| `MODEL_GATEWAY` | `openrouter` | Registered gateway id; only `openrouter` ships today |
-| `WORKFLOW_DISPATCHER` | `render` | Composition root for task triggers |
-| `WORKFLOW_SLUG` | `ragtime-workflows` | `{slug}/{task_name}` prefix |
-| `JUDGE_MODEL` | (required) | Fallback judge if the run config omits one |
-| `MAX_RUN_BUDGET_USD` | `5` | Hard per-run ceiling |
-| `MAX_PROVIDER_CALL_USD` | `0.5` | Max reserved for one provider call |
-| `EMBED_BATCH_SIZE` | `64` | Texts per embeddings call |
-| `DOC_INGEST_FANOUT_BATCH` | `8` | Parallel ingest subtasks per wave |
-| `EMBED_FANOUT_BATCH` | `6` | Parallel embed batches per model |
-| `TRIAL_FANOUT_BATCH` | `8` | Parallel `run_trial` subtasks per wave |
-| `DB_POOL_MAX` | `3` | Pool size per process; keep low on basic Postgres |
-| `MAX_TRIALS_PER_RUN` | `324` | Cap on setups × questions |
-| `MAX_ACTIVE_RUNS_PER_SESSION` | `1` | Concurrent runs one browser session may hold; `0` disables |
-| `MAX_ACTIVE_RUNS_TOTAL` | `5` | Concurrent runs deployment-wide; `0` disables |
-| `CHAOS_FAILURE_RATE` | `0` | Injected pre-spend failures (0–1) for resilience demos |
+| Variable | Where | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | Web + Workflow | Render Postgres (pgvector) connection string |
+| `OPENROUTER_API_KEY` | Web + Workflow | Model calls and the live catalog |
+| `RENDER_API_KEY` | Web | Start and cancel workflow tasks |
+| `JUDGE_MODEL` | Web + Workflow | Default judge chat slug; runs are rejected without one |
+| `WORKFLOW_SLUG` | Web | Must match the Dashboard workflow slug (`ragtime-workflows`) |
+| `APP_URL` | Workflow | Public web URL for OpenRouter `HTTP-Referer` |
+| `OPENROUTER_APP_TITLE` | Both | Defaults to `Answer Arena` |
+| `MAX_RUN_BUDGET_USD` | Both | Hard per-run ceiling (default `5`) |
+| `MAX_PROVIDER_CALL_USD` | Both | Max reserved for one provider call (default `0.5`) |
+| `MAX_ACTIVE_RUNS_PER_SESSION` | Web | Concurrent runs per browser session (default `1`; `0` disables) |
+| `MAX_ACTIVE_RUNS_TOTAL` | Web | Concurrent runs deployment-wide (default `5`; `0` disables) |
+| `CHAOS_FAILURE_RATE` | Workflow | Injected pre-spend failures for resilience demos (default `0`) |
 
 ### Shared deployments
 
-Runs are scoped to an anonymous session cookie, so testers only see and cancel their own. Concurrency is bounded at run creation: the check runs inside a transaction holding a Postgres advisory lock, so simultaneous requests cannot both pass it. Over the limit, `POST /api/runs` returns `429` with a machine-readable `code` (`session_run_limit` or `global_run_limit`) and a `Retry-After` header.
+Runs are scoped to an anonymous session cookie. Over the admission limit, `POST /api/runs` returns `429` with `session_run_limit` or `global_run_limit`. Reloading reattaches via `GET /api/runs/active`. Worst-case concurrent spend is `MAX_ACTIVE_RUNS_TOTAL × MAX_RUN_BUDGET_USD` (`$25` with Blueprint defaults).
 
-Reloading the page reattaches to the session's active run via `GET /api/runs/active`, so a run stays watchable and cancelable rather than silently holding a slot. Runs that nothing will finish (a row whose workflow task was never dispatched, or a run whose workflow disappeared) are failed on the next admission check so their slot returns to the pool.
-
-Worst-case concurrent spend is `MAX_ACTIVE_RUNS_TOTAL × MAX_RUN_BUDGET_USD`, which is $25 with the Blueprint defaults. Raising `MAX_ACTIVE_RUNS_TOTAL` also multiplies Postgres connections (`DB_POOL_MAX` per process) and provider quota pressure, so move it alongside your database plan rather than on its own.
-
-## How a run works
-
-**Ingest**: demo or uploaded text is chunked (~800 tokens, 15% overlap) into Postgres.
-
-**Embed**: for each embedding model in the run, missing chunk vectors are batched and stored in pgvector.
-
-**Retrieve**: query embedding cached per `(run, question, model)`; cosine top-`retrieve_k` filtered by embedding model.
-
-**Rerank**: optional OpenRouter rerank down to `final_k`.
-
-**Generate**: context blocks with citation instructions.
-
-**Judge**: one judge model scores faithfulness, correctness, and completeness; weighted `overall_score`.
-
-**Aggregate**: `total_cost_usd` from settled stage receipts.
-
-## Swapping a module
-
-Ports live in `packages/core`. Implementations are chosen in `packages/composition` from env vars, not scattered through feature code.
-
-| Concern | Env | Default | Swap |
-|---------|-----|---------|------|
-| Model gateway | `MODEL_GATEWAY` | `openrouter` | Add a gateway package implementing `ModelGateway`, register it in `packages/composition/src/model-gateway.ts` |
-| Workflow dispatcher | `WORKFLOW_DISPATCHER` | `render` | Register another dispatcher in `packages/composition/src/workflow-dispatcher.ts` |
-| Vector store / extractor / chunker / scorer | (wired in composition pipeline) | pgvector, html-to-text, recursive splitter, rubric judge | Replace the adapter behind the existing port |
-
-## Project structure
+## Project Structure
 
 ```
-answer-arena/
-  apps/web/              Fastify API + Vite React SPA
-  apps/workflows/        Render Workflow tasks (ingest, embed, trial, bake-off)
-  packages/core/         Ports, pipeline stages, prompts, schemas
-  packages/composition/  Env-selected gateway + workflow wiring
-  packages/db/           Drizzle schema, migrations, seed, PgVectorStore
-  packages/gateway-openrouter/
-  render.yaml            Blueprint (web + Postgres)
-  static/images/         README screenshots from the live deploy
+apps/web/                 Fastify API + Vite React SPA
+apps/workflows/           Render Workflow tasks (ingest, embed, trial, bake-off)
+packages/core/            Ports, pipeline stages, prompts, schemas
+packages/composition/     Env-selected gateway + workflow wiring
+packages/db/              Drizzle schema, migrations, seed, PgVectorStore
+packages/gateway-openrouter/
+render.yaml               Blueprint (web + Postgres)
+static/images/            README screenshots from the live deploy
 ```
 
-Internal npm packages still use the `@ragtime/*` scope for now; that is an implementation detail and does not affect the product name.
+Internal npm packages still use the `@ragtime/*` scope; that is an implementation detail and does not change the product name.
 
 ## Troubleshooting
 
-| Symptom | What to check |
-|---------|----------------|
-| Run stays in draft / 502 on start | `RENDER_API_KEY`, `WORKFLOW_SLUG`, and that the Workflow service is live in the same region |
+| Problem | Solution |
+| --- | --- |
+| Run stays in draft / 502 on start | Check `RENDER_API_KEY`, `WORKFLOW_SLUG`, and that the Workflow service is live in the same region |
 | "Judge model required" | Set `JUDGE_MODEL` on web and workflows to a chat slug you can call |
-| `sorry, too many clients already` | Lower `TRIAL_FANOUT_BATCH` / `EMBED_FANOUT_BATCH` or raise `DB_POOL_MAX` carefully on a larger Postgres plan |
-| `429` with "already have a run in progress" | Expected: one active run per session by default. Cancel the current run, or raise `MAX_ACTIVE_RUNS_PER_SESSION` |
-| `429` with "running N comparisons already" | The deployment hit `MAX_ACTIVE_RUNS_TOTAL`. Retry shortly, or raise it if your Postgres plan and provider quota allow |
-| Empty model pickers | `OPENROUTER_API_KEY` on the web service; check `/api/models` |
+| Setup shows FAILED after retries | Open Inspect / the answer card for the provider reason (rate limit, missing model, credits) |
+| `sorry, too many clients already` | Lower `TRIAL_FANOUT_BATCH` / `EMBED_FANOUT_BATCH`, or raise `DB_POOL_MAX` on a larger Postgres plan |
+| `429` with an active run | Cancel the current run, or raise `MAX_ACTIVE_RUNS_PER_SESSION` / `MAX_ACTIVE_RUNS_TOTAL` |
+| Empty model pickers | Set `OPENROUTER_API_KEY` on the web service; check `/api/models` |
 
-Logs: web service and Workflow service logs in the Render Dashboard. The app turns trial lifecycle events into the live execution timeline.
+Logs: web service and Workflow service logs in the Render Dashboard.
 
 ## Tests
 
@@ -167,7 +174,18 @@ Logs: web service and Workflow service logs in the Render Dashboard. The app tur
 pnpm test
 ```
 
-Builds workspace packages, then runs core / db / gateway / web unit tests (including execution-timeline builders). Set `TEST_DATABASE_URL` to also run the Postgres budget-recovery suite.
+Builds workspace packages, then runs core / db / gateway / web unit tests. Set `TEST_DATABASE_URL` to also run the Postgres budget-recovery suite.
+
+## Learn More
+
+**Render:**
+- [Render Workflows](https://render.com/docs/workflows)
+- [Render Postgres](https://render.com/docs/databases)
+- [Deploy to Render button](https://render.com/docs/deploy-to-render-button)
+
+**OpenRouter:**
+- [OpenRouter docs](https://openrouter.ai/docs)
+- [Activity / usage](https://openrouter.ai/activity)
 
 ## Contributing
 

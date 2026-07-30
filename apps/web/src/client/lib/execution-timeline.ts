@@ -27,6 +27,8 @@ export type TimelineRow = {
   attempt: number;
   retries: number;
   status: "pending" | "running" | "complete" | "failed";
+  /** Last public failure message from trial.failed events, if any. */
+  failureReason?: string;
   spans: TimelineSpan[];
 };
 
@@ -180,6 +182,7 @@ export function buildExecutionTimeline(args: {
     let attempt = 1;
     let retries = 0;
     let failed = false;
+    let failureReason: string | undefined;
 
     for (const event of trialEvents) {
       const at = eventMs(event);
@@ -237,6 +240,10 @@ export function buildExecutionTimeline(args: {
           });
           open.delete(pending.key);
         }
+        const message = event.payload.message;
+        if (typeof message === "string" && message.trim() !== "") {
+          failureReason = message.trim();
+        }
         failed = true;
       }
     }
@@ -269,6 +276,7 @@ export function buildExecutionTimeline(args: {
       label,
       attempt,
       retries,
+      failureReason,
       status: hasRunning
         ? "running"
         : completedJudge

@@ -51,6 +51,7 @@ export type GridCell = {
   overallScore: string | null;
   attempts: number;
   answer: string | null;
+  error?: string | null;
   judgeOnly?: boolean;
 };
 
@@ -83,6 +84,8 @@ export type TrialDetail = {
     stages: import("@ragtime/core").TrialStages;
     overallScore: string | null;
     status: string;
+    error?: string | null;
+    attempts?: number;
   };
   question: { text: string; referenceAnswer: string | null };
   combo: { embeddingModel: string; rerankModel: string | null; genModel: string };
