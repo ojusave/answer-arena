@@ -178,19 +178,13 @@ Builds workspace packages, then runs core / db / gateway / web unit tests. Set `
 
 ## Learn More
 
-**This example:**
-- <a href="https://ragtime-web.onrender.com/" target="_blank" rel="noopener noreferrer">Live demo</a>
-- <a href="https://github.com/render-examples/answer-arena" target="_blank" rel="noopener noreferrer">GitHub: render-examples/answer-arena</a>
-
 **Render:**
 - <a href="https://render.com/docs/workflows" target="_blank" rel="noopener noreferrer">Render Workflows</a>
-- <a href="https://render.com/docs/databases" target="_blank" rel="noopener noreferrer">Render Postgres</a>
-- <a href="https://render.com/docs/deploy-to-render-button" target="_blank" rel="noopener noreferrer">Deploy to Render button</a>
 - <a href="https://discord.gg/gvC7ceS9YS" target="_blank" rel="noopener noreferrer">Render Developers Discord</a>
 
 **OpenRouter:**
 - <a href="https://openrouter.ai/docs" target="_blank" rel="noopener noreferrer">OpenRouter docs</a>
-- <a href="https://openrouter.ai/activity" target="_blank" rel="noopener noreferrer">Activity / usage</a>
+- <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">API keys</a>
 - <a href="https://discord.gg/fVyRaUDgxW" target="_blank" rel="noopener noreferrer">OpenRouter Discord</a>
 
 ## Contributing
