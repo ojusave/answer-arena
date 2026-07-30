@@ -98,8 +98,10 @@ export default function AnswerCards({ combos, grid, selectedTrialId, onSelect }:
                     {COPY.app.answerPending}
                   </Text>
                 ) : status === "failed" && !answer ? (
-                  <Text size="sm" c="red">
-                    {COPY.app.answerFailed}
+                  <Text size="sm" c="red" className="answer-card-text">
+                    {cell?.error
+                      ? COPY.app.answerFailedReason(cell.error)
+                      : COPY.app.answerFailed}
                   </Text>
                 ) : answer ? (
                   <Text size="sm" className="answer-card-text">

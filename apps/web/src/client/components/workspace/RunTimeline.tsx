@@ -1,4 +1,4 @@
-import { Badge, Group, Stack, Text } from "@mantine/core";
+import { Badge, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -177,9 +177,22 @@ export default function RunTimeline({
                 {row.label}
               </Text>
               <Group gap={5} wrap="nowrap">
-                <Badge color={statusColor(row.status)} variant="light" size="xs">
-                  {row.status}
-                </Badge>
+                {row.failureReason ? (
+                  <Tooltip label={row.failureReason} multiline w={320} withArrow>
+                    <Badge
+                      color={statusColor(row.status)}
+                      variant="light"
+                      size="xs"
+                      style={{ cursor: "help" }}
+                    >
+                      {row.status}
+                    </Badge>
+                  </Tooltip>
+                ) : (
+                  <Badge color={statusColor(row.status)} variant="light" size="xs">
+                    {row.status}
+                  </Badge>
+                )}
                 {row.retries > 0 && (
                   <Text size="xs" c="orange" ff="monospace">
                     retry {row.retries}

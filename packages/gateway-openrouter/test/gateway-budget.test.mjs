@@ -208,6 +208,7 @@ test("provider error bodies are not exposed and paid errors are not retried", as
         (error) => {
           assert.match(error.message, /HTTP 503/);
           assert.doesNotMatch(error.message, /secret prompt/);
+          assert.equal(error.detail, "Provider returned a non-JSON error response");
           assert.equal(error.billingAmbiguous, true);
           return true;
         }

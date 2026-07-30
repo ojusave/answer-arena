@@ -1,5 +1,6 @@
 import {
   ProviderCallError,
+  providerErrorDetail,
   type CatalogWarning,
   type GatewayIdentity,
   type ModelGateway,
@@ -26,6 +27,7 @@ function classifyStatus(
   if (status === 402) return "insufficient_credits";
   if (status === 429) return "rate_limited";
   if (status === 401 || status === 403) return "auth";
+  if (status === 404) return "invalid_model";
   if (status === 400) {
     return /model/i.test(bodyText ?? "") ? "invalid_model" : undefined;
   }
@@ -179,16 +181,22 @@ export function createOpenRouterGateway(options?: {
           res.status,
           retryAfterMs(res.headers.get("retry-after")),
           code,
-          helpUrlForCode(code)
+          helpUrlForCode(code),
+          providerErrorDetail(bodyText)
         );
       }
+      const text = await res.text();
       try {
-        return (await res.json()) as T;
+        return JSON.parse(text) as T;
       } catch {
         throw new ProviderCallError(
           `OpenRouter ${path} returned an invalid JSON response`,
           body !== undefined,
-          res.status
+          res.status,
+          undefined,
+          undefined,
+          undefined,
+          providerErrorDetail(text)
         );
       }
     };

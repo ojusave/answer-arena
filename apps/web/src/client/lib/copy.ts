@@ -212,7 +212,9 @@ export const COPY = {
     answerPending: "Waiting to run",
     answerRunning: "Generating answer…",
     answerFailed: "This setup did not produce an answer.",
+    answerFailedReason: (reason: string) => `Reason: ${reason}`,
     answerEmpty: "No answer returned.",
+    inspectorFailure: "Why this setup failed",
     setups: "Setups",
     setupCount: (n: number) => `${n} setup${n === 1 ? "" : "s"}`,
     setupsScored: (scored: number, total: number) =>

@@ -80,11 +80,29 @@ export default function ComboInspector({
               </Text>
             </Group>
           </Stack>
-          <Badge color={trial.trial.status === "complete" ? "green" : "gray"} variant="light">
+          <Badge
+            color={
+              trial.trial.status === "complete"
+                ? "green"
+                : trial.trial.status === "failed"
+                  ? "red"
+                  : "gray"
+            }
+            variant="light"
+          >
             {statusLabel}
           </Badge>
         </Group>
       </section>
+
+      {trial.trial.status === "failed" && trial.trial.error && (
+        <section aria-label={COPY.app.inspectorFailure}>
+          <Text className="inspector-score-label">{COPY.app.inspectorFailure}</Text>
+          <Text size="sm" c="red">
+            {trial.trial.error}
+          </Text>
+        </section>
+      )}
 
       <TrialStagesPanel
         stages={trial.trial.stages}

@@ -217,6 +217,7 @@ export function registerRunRoutes(app: FastifyInstance): void {
               overallScore: trials.overallScore,
               attempts: trials.attempts,
               answer: trials.answer,
+              error: trials.error,
             })
             .from(trials)
             .where(
