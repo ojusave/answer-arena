@@ -1,3 +1,7 @@
+/**
+ * Domain types, ports, and pipeline stages for Answer Arena.
+ * No vendor SDKs here: adapters live under packages/gateway-* and composition.
+ */
 export * from "./schemas.js";
 export * from "./prompts.js";
 export * from "./config.js";
