@@ -15,13 +15,13 @@ A playground to compare search + answer setups side by side. Pick embedding, opt
     <img src="https://img.shields.io/badge/Render-Workflows-6c63ff?logo=render&logoColor=white" alt="Render Workflows" />
   </a>
   <a href="https://openrouter.ai">
-    <img src="https://img.shields.io/badge/OpenRouter-Models-111111" alt="OpenRouter Models" />
+    <img src="https://img.shields.io/badge/OpenRouter-Models-ff6b6b" alt="OpenRouter Models" />
   </a>
-  <a href="https://render.com/docs/databases">
-    <img src="https://img.shields.io/badge/Render%20Postgres-pgvector-46E3B7?logo=postgresql&logoColor=white" alt="Render Postgres and pgvector" />
+  <a href="https://discord.gg/gvC7ceS9YS">
+    <img src="https://img.shields.io/badge/Discord-Render%20Developers-5865F2?logo=discord&logoColor=white" alt="Render Developers Discord" />
   </a>
-  <a href="https://ragtime-web.onrender.com/">
-    <img src="https://img.shields.io/badge/Demo-Live-22c55e" alt="Live demo" />
+  <a href="https://discord.gg/fVyRaUDgxW">
+    <img src="https://img.shields.io/badge/Discord-OpenRouter-5865F2?logo=discord&logoColor=white" alt="OpenRouter Discord" />
   </a>
 </p>
 
