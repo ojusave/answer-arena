@@ -4,28 +4,28 @@
 
 A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable [Render Workflows](https://render.com/docs/workflows) task and is scored by a shared judge model.
 
-**Live demo:** [https://ragtime-web.onrender.com/](https://ragtime-web.onrender.com/)
+**Live demo:** <a href="https://ragtime-web.onrender.com/" target="_blank" rel="noopener noreferrer">https://ragtime-web.onrender.com/</a>
 
 <p>
-  <a href="https://render.com/deploy?repo=https://github.com/render-examples/answer-arena">
+  <a href="https://render.com/deploy?repo=https://github.com/render-examples/answer-arena" target="_blank" rel="noopener noreferrer">
     <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
   </a>
 </p>
 
 <p>
-  <a href="https://ragtime-web.onrender.com/">
+  <a href="https://ragtime-web.onrender.com/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Live-Demo-46E3B7?logo=render&logoColor=white" alt="Live Demo" />
   </a>
-  <a href="https://render.com/docs/workflows">
+  <a href="https://render.com/docs/workflows" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Render-Workflows-6c63ff?logo=render&logoColor=white" alt="Render Workflows" />
   </a>
-  <a href="https://openrouter.ai">
+  <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/OpenRouter-Models-ff6b6b" alt="OpenRouter Models" />
   </a>
-  <a href="https://discord.gg/gvC7ceS9YS">
+  <a href="https://discord.gg/gvC7ceS9YS" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Discord-Render%20Developers-5865F2?logo=discord&logoColor=white" alt="Render Developers Discord" />
   </a>
-  <a href="https://discord.gg/fVyRaUDgxW">
+  <a href="https://discord.gg/fVyRaUDgxW" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Discord-OpenRouter-5865F2?logo=discord&logoColor=white" alt="OpenRouter Discord" />
   </a>
 </p>
@@ -179,20 +179,20 @@ Builds workspace packages, then runs core / db / gateway / web unit tests. Set `
 ## Learn More
 
 **This example:**
-- [Live demo](https://ragtime-web.onrender.com/)
-- [GitHub: render-examples/answer-arena](https://github.com/render-examples/answer-arena)
+- <a href="https://ragtime-web.onrender.com/" target="_blank" rel="noopener noreferrer">Live demo</a>
+- <a href="https://github.com/render-examples/answer-arena" target="_blank" rel="noopener noreferrer">GitHub: render-examples/answer-arena</a>
 
 **Render:**
-- [Render Workflows](https://render.com/docs/workflows)
-- [Render Postgres](https://render.com/docs/databases)
-- [Deploy to Render button](https://render.com/docs/deploy-to-render-button)
-- [Render Developers Discord](https://discord.gg/gvC7ceS9YS)
+- <a href="https://render.com/docs/workflows" target="_blank" rel="noopener noreferrer">Render Workflows</a>
+- <a href="https://render.com/docs/databases" target="_blank" rel="noopener noreferrer">Render Postgres</a>
+- <a href="https://render.com/docs/deploy-to-render-button" target="_blank" rel="noopener noreferrer">Deploy to Render button</a>
+- <a href="https://discord.gg/gvC7ceS9YS" target="_blank" rel="noopener noreferrer">Render Developers Discord</a>
 
 **OpenRouter:**
-- [OpenRouter docs](https://openrouter.ai/docs)
-- [Activity / usage](https://openrouter.ai/activity)
-- [OpenRouter Discord](https://discord.gg/fVyRaUDgxW)
+- <a href="https://openrouter.ai/docs" target="_blank" rel="noopener noreferrer">OpenRouter docs</a>
+- <a href="https://openrouter.ai/activity" target="_blank" rel="noopener noreferrer">Activity / usage</a>
+- <a href="https://discord.gg/fVyRaUDgxW" target="_blank" rel="noopener noreferrer">OpenRouter Discord</a>
 
 ## Contributing
 
-Issues and PRs are welcome on [github.com/render-examples/answer-arena](https://github.com/render-examples/answer-arena). Keep changes small and focused; match existing module boundaries (`packages/composition` for wiring, `packages/core` for pipeline logic, `apps/workflows` for durable tasks).
+Issues and PRs are welcome on <a href="https://github.com/render-examples/answer-arena" target="_blank" rel="noopener noreferrer">github.com/render-examples/answer-arena</a>. Keep changes small and focused; match existing module boundaries (`packages/composition` for wiring, `packages/core` for pipeline logic, `apps/workflows` for durable tasks).

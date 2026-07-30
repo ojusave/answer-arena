@@ -1,7 +1,7 @@
 import { Anchor, AppShell, Box, Group, Text, UnstyledButton } from "@mantine/core";
 import { useState } from "react";
 import { Route, Routes, Link } from "react-router-dom";
-import { GITHUB_REPO_URL, WORKFLOWS_DOCS_URL } from "./lib/render-links";
+import { GITHUB_REPO_URL, WORKFLOWS_DOCS_URL, EXTERNAL_LINK_PROPS } from "./lib/render-links";
 import RenderCtas from "./components/RenderCtas";
 import ThemeToggle from "./components/ThemeToggle";
 import HowItWorksModal from "./components/workspace/HowItWorksModal";
@@ -54,16 +54,14 @@ export default function App() {
             <Anchor
               className="pg-footer-link"
               href={GITHUB_REPO_URL}
-              target="_blank"
-              rel="noreferrer"
+              {...EXTERNAL_LINK_PROPS}
             >
               {COPY.app.githubLink}
             </Anchor>
             <Anchor
               className="pg-footer-link"
               href={WORKFLOWS_DOCS_URL}
-              target="_blank"
-              rel="noreferrer"
+              {...EXTERNAL_LINK_PROPS}
             >
               {COPY.app.workflowsDocs}
             </Anchor>

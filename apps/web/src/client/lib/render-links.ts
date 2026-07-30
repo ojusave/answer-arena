@@ -15,3 +15,9 @@ export const DEPLOY_TO_RENDER_URL =
   "https://render.com/deploy?repo=https://github.com/render-examples/answer-arena";
 
 export const WORKFLOWS_DOCS_URL = "https://render.com/docs/workflows";
+
+/** Shared props so external chrome links always open in a new tab. */
+export const EXTERNAL_LINK_PROPS = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+} as const;

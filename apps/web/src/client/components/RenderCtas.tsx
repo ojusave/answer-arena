@@ -1,5 +1,5 @@
 import { Button, Group } from "@mantine/core";
-import { DEPLOY_TO_RENDER_URL, renderSignupUrlWithUtms } from "../lib/render-links";
+import { DEPLOY_TO_RENDER_URL, renderSignupUrlWithUtms, EXTERNAL_LINK_PROPS } from "../lib/render-links";
 
 type Props = {
   signupContent?: "navbar_button" | "hero_cta" | "footer_link";
@@ -14,8 +14,7 @@ export default function RenderCtas({ signupContent = "navbar_button", size = "co
         className="render-deploy"
         component="a"
         href={DEPLOY_TO_RENDER_URL}
-        target="_blank"
-        rel="noreferrer"
+        {...EXTERNAL_LINK_PROPS}
         variant="filled"
         size={size}
       >
@@ -26,8 +25,7 @@ export default function RenderCtas({ signupContent = "navbar_button", size = "co
         className="render-signup"
         component="a"
         href={renderSignupUrlWithUtms(signupContent)}
-        target="_blank"
-        rel="noreferrer"
+        {...EXTERNAL_LINK_PROPS}
         variant="outline"
         size={size}
       >
