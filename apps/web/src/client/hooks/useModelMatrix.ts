@@ -10,6 +10,7 @@ import {
 } from "../lib/model-preset";
 import type { Catalog, Setup } from "./types";
 
+/** Configure-panel state for explicit setups (and optional matrix mode). */
 export function useModelMatrix(questionCount: number) {
   // Explicit setups are the source of truth for a run.
   const [setups, setSetups] = useState<Setup[]>([]);

@@ -35,6 +35,7 @@ function useLiveNow(active: boolean): number {
   return now;
 }
 
+/** Gantt-style clock for retrieve / rerank / generation / judge (and retries). */
 export default function RunTimeline({
   runId,
   runStatus,

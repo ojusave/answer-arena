@@ -43,6 +43,7 @@ const selectFieldProps = {
   classNames: { input: "rag-select-input" },
 };
 
+/** Left pane: question, setups, and Run (over-limit warning only when needed). */
 export default function ControlsPanel({
   samples,
   prompt,

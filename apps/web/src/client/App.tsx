@@ -9,6 +9,7 @@ import WorkspacePage from "./pages/WorkspacePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { COPY } from "./lib/copy";
 
+/** Shell: header chrome, workspace routes, sticky footer with GitHub / Workflows. */
 export default function App() {
   const [showHow, setShowHow] = useState(false);
 

@@ -1,3 +1,8 @@
+/**
+ * HTTP entry for the Answer Arena web service.
+ * Registers session + API routes, then serves the Vite client build.
+ * Binds to `0.0.0.0:$PORT` for Render.
+ */
 import Fastify from "fastify";
 import fastifyCookie from "@fastify/cookie";
 import fastifyStatic from "@fastify/static";
@@ -14,6 +19,7 @@ import { registerInspectRoutes } from "./inspect.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/** Build the Fastify app with API routes and SPA static hosting. */
 export async function buildServer() {
   const app = Fastify({ logger: true });
 
@@ -52,6 +58,7 @@ export async function buildServer() {
   return app;
 }
 
+/** Listen on the Render-provided port (or 3000 locally). */
 export async function startServer() {
   const app = await buildServer();
   const port = Number(process.env.PORT ?? 3000);

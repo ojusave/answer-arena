@@ -6,6 +6,7 @@ import { asSessionRequest } from "../types.js";
 
 const { combos, questions } = schema;
 
+/** Trial detail for the Inspect panel (answer, stages, chunks, score). */
 export function registerTrialRoutes(app: FastifyInstance): void {
   const db = getDb();
 

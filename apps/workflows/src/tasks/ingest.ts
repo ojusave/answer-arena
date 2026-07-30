@@ -20,8 +20,14 @@ import { getAppConfig } from "@ragtime/core";
 import { maybeChaos, chunkIntoBatches } from "../lib/chaos.js";
 import { runInWaves } from "../lib/fanout.js";
 
+/**
+ * Corpus prep tasks: turn a document into chunks, then embed missing vectors.
+ * `embed_corpus` fans out `embed_chunk_batch` so large libraries stay within
+ * per-task timeouts and retries.
+ */
 const { documents, chunks } = schema;
 
+/** Extract text and persist chunks for one document (idempotent when already ready). */
 export const ingestDocument = defineWorkflowTask(
   {
     name: "ingest_document",
@@ -66,6 +72,7 @@ export const ingestDocument = defineWorkflowTask(
   }
 );
 
+/** Embed one batch of chunk ids for a single embedding model (cost-reserved). */
 export const embedChunkBatch = defineWorkflowTask(
   {
     name: "embed_chunk_batch",
@@ -114,6 +121,7 @@ export const embedChunkBatch = defineWorkflowTask(
   }
 );
 
+/** Fan out missing-chunk embeds for one model across the corpus. */
 export const embedCorpus = defineWorkflowTask(
   {
     name: "embed_corpus",

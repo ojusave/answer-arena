@@ -6,6 +6,7 @@ import { scorePercent, scoreTone } from "../../lib/score-display";
 import { comboLabel } from "@ragtime/core";
 import type { TrialDetail } from "../../hooks/types";
 
+/** Detail pane for the selected answer: score, stages, and retrieved passages. */
 export default function ComboInspector({
   trial,
   loading,

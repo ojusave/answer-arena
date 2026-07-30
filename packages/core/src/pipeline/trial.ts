@@ -44,6 +44,10 @@ export type RunTrialPipelineResult = {
   overallScore: number;
 };
 
+/**
+ * Retrieve → optional rerank → generate → judge for one setup × question.
+ * Resumes from `existingStages` when a workflow retry re-enters mid-pipeline.
+ */
 export async function runTrialPipeline(
   input: RunTrialPipelineInput
 ): Promise<RunTrialPipelineResult> {

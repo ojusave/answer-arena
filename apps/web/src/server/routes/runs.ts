@@ -35,6 +35,7 @@ const { questions, runs, combos, trials } = schema;
 
 const ACTIVE = new Set(["ingesting", "running", "aggregating"]);
 
+/** Snapshot of question ids stored on the run config (empty when "all"). */
 function persistedQuestionSnapshot(config: unknown): string[] {
   const parsed = runConfigSchema.safeParse(config);
   return parsed.success && parsed.data.questionIds !== "all"
@@ -42,6 +43,7 @@ function persistedQuestionSnapshot(config: unknown): string[] {
     : [];
 }
 
+/** Create, start, poll, cancel, and list comparison runs for the session. */
 export function registerRunRoutes(app: FastifyInstance): void {
   const db = getDb();
   const config = getAppConfig();

@@ -28,6 +28,10 @@ type StartArgs = {
   allQuestions?: boolean;
 };
 
+/**
+ * Client state for the active comparison: start/cancel, poll run payload,
+ * and load the selected trial for Inspect.
+ */
 export function useWorkspaceRun() {
   const qc = useQueryClient();
   const [runId, setRunId] = useState<string | null>(null);

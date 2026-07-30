@@ -25,6 +25,7 @@ type Props = {
   escalating: boolean;
 };
 
+/** Center pane: run summary, answer cards, and execution timeline. */
 export default function CanvasPanel({
   run,
   runId,

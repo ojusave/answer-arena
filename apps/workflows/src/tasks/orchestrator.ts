@@ -23,6 +23,10 @@ import {
   runTrial,
 } from "./trial.js";
 
+/**
+ * Top-level bake-off orchestration: ingest/embed as needed, fan out trials,
+ * then aggregate spend and finalize run status.
+ */
 const { runs, documents, trials, combos, questions, chunks } = schema;
 const TRIAL_POLL_INTERVAL_MS = 2_000;
 const TRIAL_DRAIN_TIMEOUT_MS =
@@ -46,6 +50,7 @@ async function countCompleteTrials(
   return rows.length;
 }
 
+/** Recompute the run's settled spend from the cost ledger. */
 export const aggregateRun = defineWorkflowTask(
   {
     name: "aggregate_run",
@@ -76,6 +81,7 @@ export const aggregateRun = defineWorkflowTask(
   }
 );
 
+/** Optional helper: ask a model to invent evaluation questions for a corpus. */
 export const generateQuestions = defineWorkflowTask(
   {
     name: "generate_questions",
@@ -121,6 +127,10 @@ export const generateQuestions = defineWorkflowTask(
   }
 );
 
+/**
+ * Entry task the web service starts for each comparison.
+ * Owns corpus readiness, trial fan-out, polling, and terminal status.
+ */
 export const runBakeoff = defineWorkflowTask(
   {
     name: "run_bakeoff",

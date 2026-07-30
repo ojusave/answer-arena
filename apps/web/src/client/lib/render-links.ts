@@ -1,3 +1,4 @@
+/** Signup URL with fixed Ojus UTMs; only `utm_content` varies by placement. */
 export function renderSignupUrlWithUtms(content = "footer_link"): string {
   const params = new URLSearchParams({
     utm_source: "github",

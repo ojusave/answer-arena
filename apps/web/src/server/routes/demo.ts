@@ -10,6 +10,7 @@ function allowDemoSeed(): boolean {
   return process.env.ALLOW_DEMO_SEED !== "false";
 }
 
+/** Ensure the SciFact demo corpus exists for new sessions. */
 export function registerDemoRoutes(app: FastifyInstance): void {
   const db = getDb();
 

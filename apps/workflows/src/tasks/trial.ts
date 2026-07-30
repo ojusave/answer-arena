@@ -23,10 +23,17 @@ import {
 } from "@ragtime/db";
 import { maybeChaos, ChaosError } from "../lib/chaos.js";
 
+/**
+ * One setup × one question: retrieve → optional rerank → generate → judge.
+ * Checkpoints completed stages so Workflow retries skip finished provider work.
+ */
 const { runs, trials, questions, combos } = schema;
+/** Lease length for a claimed trial while a worker is actively running it. */
 export const TRIAL_LEASE_MS = 300_000;
+/** Hard cap on claim attempts before the trial is marked failed. */
 export const MAX_TRIAL_ATTEMPTS = 4;
 
+/** Durable worker for a single trial row. */
 export const runTrial = defineWorkflowTask(
   {
     name: "run_trial",

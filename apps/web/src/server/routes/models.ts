@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { getModelCatalog } from "../lib/catalog-cache.js";
 import { toErrorBody } from "../lib/error-response.js";
 
+/** Live OpenRouter model catalog for Configure pickers. */
 export function registerModelRoutes(app: FastifyInstance): void {
   app.get("/api/models", async (_req, reply) => {
     try {

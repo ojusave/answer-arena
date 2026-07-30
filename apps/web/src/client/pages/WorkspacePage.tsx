@@ -12,6 +12,7 @@ import ControlsPanel from "../components/workspace/ControlsPanel";
 import DemoSetupPanel from "../components/workspace/DemoSetupPanel";
 import ResizableWorkspace from "../components/workspace/ResizableWorkspace";
 
+/** Main playground: Configure + Compare + Inspect wired to run state. */
 export default function WorkspacePage() {
   const mobile = useMediaQuery("(max-width: 70em)");
   const {

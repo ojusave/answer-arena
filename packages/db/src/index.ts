@@ -1,3 +1,7 @@
+/**
+ * Postgres access for Answer Arena: schema, budget ledger, run events,
+ * trial claims, and pgvector retrieval.
+ */
 export * from "./client.js";
 export * from "./schema.js";
 export * from "./budget.js";

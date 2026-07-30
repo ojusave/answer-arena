@@ -103,6 +103,7 @@ function boundedProviderPricing(args: {
   };
 }
 
+/** Builds a ModelGateway that talks to OpenRouter (catalog + chat/embed/rerank). */
 export function createOpenRouterGateway(options?: {
   apiKey?: string;
   appUrl?: string;
