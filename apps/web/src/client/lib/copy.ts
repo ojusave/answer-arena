@@ -48,6 +48,16 @@ export function stageLabel(stage: string): string {
   return PIPELINE_STAGE_LABEL[stage] ?? stage.replace(/_/g, " ");
 }
 
+export type RunPlanSummary = {
+  setupCount: number;
+  questionCount: number;
+  trialCount: number;
+  budgetUsd: number;
+  overLimit: boolean;
+  /** Compact spoken form for aria-label / over-limit errors. */
+  line: string;
+};
+
 export function formatMatrixSummary(args: {
   embedCount: number;
   rerankCount: number;
@@ -55,25 +65,34 @@ export function formatMatrixSummary(args: {
   questionCount: number;
   budgetUsd: number;
   maxTrials: number;
-}): { line: string; trialCount: number; overLimit: boolean } {
-  const setups = args.embedCount * args.rerankCount * args.genCount;
-  const trialCount = setups * args.questionCount;
-  const overLimit = trialCount > args.maxTrials;
-  const line = `${setups} setup${setups === 1 ? "" : "s"} × ${args.questionCount} question${args.questionCount === 1 ? "" : "s"} = ${trialCount} answer${trialCount === 1 ? "" : "s"}. Budget $${args.budgetUsd.toFixed(2)}.`;
-  return { line, trialCount, overLimit };
+}): RunPlanSummary {
+  const setupCount = args.embedCount * args.rerankCount * args.genCount;
+  return formatSetupSummary({
+    setupCount,
+    questionCount: args.questionCount,
+    budgetUsd: args.budgetUsd,
+    maxTrials: args.maxTrials,
+  });
 }
 
-/** Summary line for explicit-setup mode, counting one answer per setup per question. */
+/** Summary for explicit-setup mode: one answer per setup per question. */
 export function formatSetupSummary(args: {
   setupCount: number;
   questionCount: number;
   budgetUsd: number;
   maxTrials: number;
-}): { line: string; trialCount: number; overLimit: boolean } {
+}): RunPlanSummary {
   const trialCount = args.setupCount * args.questionCount;
   const overLimit = trialCount > args.maxTrials;
   const line = `${args.setupCount} setup${args.setupCount === 1 ? "" : "s"} × ${args.questionCount} question${args.questionCount === 1 ? "" : "s"} = ${trialCount} answer${trialCount === 1 ? "" : "s"}. Budget $${args.budgetUsd.toFixed(2)}.`;
-  return { line, trialCount, overLimit };
+  return {
+    setupCount: args.setupCount,
+    questionCount: args.questionCount,
+    trialCount,
+    budgetUsd: args.budgetUsd,
+    overLimit,
+    line,
+  };
 }
 
 export type FriendlyErrorMeta = {
@@ -215,6 +234,11 @@ export const COPY = {
     answerFailedReason: (reason: string) => `Reason: ${reason}`,
     answerEmpty: "No answer returned.",
     inspectorFailure: "Why this setup failed",
+    planSetups: "Setups",
+    planQuestions: "Questions",
+    planAnswers: "Answers",
+    planBudget: "Budget",
+    planOverLimit: "Too many answers for one run. Remove a setup or pick fewer questions.",
     setups: "Setups",
     setupCount: (n: number) => `${n} setup${n === 1 ? "" : "s"}`,
     setupsScored: (scored: number, total: number) =>

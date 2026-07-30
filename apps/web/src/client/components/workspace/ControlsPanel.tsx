@@ -282,15 +282,40 @@ export default function ControlsPanel({
       </Collapse>
 
       <div className="control-runbar">
-        <Text size="xs" c={summary.overLimit ? "red" : "dimmed"}>
-          {summary.line}
-        </Text>
+        <div
+          className={`control-plan${summary.overLimit ? " control-plan--warn" : ""}`}
+          aria-label={summary.line}
+        >
+          <div className="control-plan__cell">
+            <span className="control-plan__label">{COPY.app.planSetups}</span>
+            <span className="control-plan__value">{summary.setupCount}</span>
+          </div>
+          <div className="control-plan__cell">
+            <span className="control-plan__label">{COPY.app.planQuestions}</span>
+            <span className="control-plan__value">{summary.questionCount}</span>
+          </div>
+          <div className="control-plan__cell">
+            <span className="control-plan__label">{COPY.app.planAnswers}</span>
+            <span className="control-plan__value">{summary.trialCount}</span>
+          </div>
+          <div className="control-plan__cell">
+            <span className="control-plan__label">{COPY.app.planBudget}</span>
+            <span className="control-plan__value">
+              ${summary.budgetUsd.toFixed(2)}
+            </span>
+          </div>
+        </div>
+        {summary.overLimit && (
+          <Text size="xs" c="red">
+            {COPY.app.planOverLimit}
+          </Text>
+        )}
         <Button
           type="button"
           size="sm"
           onClick={onRun}
           loading={running}
-          disabled={!canRun || running}
+          disabled={!canRun || running || summary.overLimit}
           fullWidth
         >
           {running ? COPY.app.runningButton : COPY.app.runButton}
