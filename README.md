@@ -4,8 +4,6 @@
 
 A playground to compare search + answer setups side by side. Pick embedding, optional rerank, and generation models, ask the same question, and compare answers, evidence, cost, and speed. Each setup runs as a durable <a href="https://render.com/docs/workflows" target="_blank" rel="noopener noreferrer">Render Workflows</a> task and is scored by a shared judge model.
 
-**Live demo:** <a href="https://ragtime-web.onrender.com/" target="_blank" rel="noopener noreferrer">https://ragtime-web.onrender.com/</a>
-
 <p>
   <a href="https://render.com/deploy?repo=https://github.com/render-examples/answer-arena" target="_blank" rel="noopener noreferrer">
     <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
